@@ -507,6 +507,11 @@
       <label for="cfgDest">목적지</label>
       <input id="cfgDest" type="text" placeholder="비우면 기본 목적지">
     </div>
+    <div>
+      <label for="cfgMotto">표지 문구</label>
+      <input id="cfgMotto" type="text" placeholder="비우면 가장 최근 속마음이 보여요">
+      <p class="hint">적어두면 이 항로 표지에 늘 이 문구가 걸려요. 속마음이 없는 방이나, 아끼는 한 줄을 걸어두고 싶을 때 쓰세요.</p>
+    </div>
     <fieldset>
       <legend>선원</legend>
       <div id="cfgCrew" style="display:flex;flex-direction:column;gap:6px"></div>
@@ -541,6 +546,7 @@
     me:          '희영',       // 서식(악보, 서약서)에 쓰이는 내 캐릭터
     partner:     '재훈',       // 상대 캐릭터
     background:  'bg.jpg',     // 배경 이미지. 저장소에 bg.jpg를 올렸다면 'bg.jpg'
+    motto:       '',           // 전체 항로 표지 문구. 비우면 가장 최근 속마음
     readStyle:   'classic'     // 처음 보여줄 서식: classic, letter, log, score, vow
   };
 
@@ -637,6 +643,7 @@
       out[name] = {
         guide:String(v.guide || '').trim(), kicker:String(v.kicker || '').trim(),
         destination:String(v.destination || '').trim(),
+        motto:String(v.motto || '').trim(),
         crew:(Array.isArray(v.crew) ? v.crew : []).map(m => ({ name:String((m && m.name) || '').trim(), note:String((m && m.note) || '').trim() })).filter(m => m.name)
       };
     });
@@ -839,13 +846,14 @@
     if (routeFilter === null){
       const seen = new Set(), crew = [];
       Object.values(store.routes).forEach(r => r.crew.forEach(m => { if (!seen.has(m.name)){ seen.add(m.name); crew.push(m); } }));
-      return { kicker:LOG.series, guide:LOG.guide, destination:LOG.destination, crew };
+      return { kicker:LOG.series, guide:LOG.guide, destination:LOG.destination, motto:LOG.motto || '', crew };
     }
     const r = store.routes[routeFilter] || {};
     return {
       kicker: r.kicker || routeFilter || LOG.series,
       guide: r.guide || LOG.guide,
       destination: r.destination || LOG.destination,
+      motto: r.motto || '',
       crew: r.crew || []
     };
   }
@@ -880,8 +888,9 @@
     $('track').style.setProperty('--pos', pos.toFixed(2) + '%');
     $('routeCap').textContent = n ? '현재 ' + pad3(n) + ', 남은 거리 ∞' : '남은 거리 ∞';
 
-    let last = '';
-    for (let i = arr.length - 1; i >= 0; i--){ const h = info(arr[i]).heart; if (h){ last = h; break; } }
+    // 표지 문구가 있으면 그것, 없으면 가장 최근 속마음
+    let last = cfg.motto || '';
+    if (!last) for (let i = arr.length - 1; i >= 0; i--){ const h = info(arr[i]).heart; if (h){ last = h; break; } }
     $('lastHeart').hidden = !last;
     $('lastHeart').textContent = last;
     if (canEdit){
@@ -1980,9 +1989,9 @@
   function fillCfg(name){
     const isNew = name === NEW_ROUTE;
     $('cfgNewWrap').hidden = !isNew;
-    const r = (!isNew && store.routes[name]) || { guide:'', kicker:'', destination:'', crew:[] };
+    const r = (!isNew && store.routes[name]) || { guide:'', kicker:'', destination:'', motto:'', crew:[] };
     $('cfgNew').value = '';
-    $('cfgGuide').value = r.guide; $('cfgKicker').value = r.kicker; $('cfgDest').value = r.destination;
+    $('cfgGuide').value = r.guide; $('cfgKicker').value = r.kicker; $('cfgDest').value = r.destination; $('cfgMotto').value = r.motto || '';
     $('cfgGuide').placeholder = '비우면 ' + (LOG.guide || '-');
     $('cfgDest').placeholder = '비우면 ' + (LOG.destination || '기본 목적지');
     $('cfgCrew').replaceChildren();
@@ -2014,8 +2023,8 @@
       if (!name){ alert('새 항로 이름을 적어주세요.'); $('cfgNew').focus(); return; }
     }
     const crew = [...$('cfgCrew').children].map(r => ({ name:r.querySelector('.mn').value.trim(), note:r.querySelector('.mt').value.trim() })).filter(m => m.name);
-    const v = { guide:$('cfgGuide').value.trim(), kicker:$('cfgKicker').value.trim(), destination:$('cfgDest').value.trim(), crew };
-    if (!v.guide && !v.kicker && !v.destination && !crew.length) delete store.routes[name];
+    const v = { guide:$('cfgGuide').value.trim(), kicker:$('cfgKicker').value.trim(), destination:$('cfgDest').value.trim(), motto:$('cfgMotto').value.trim(), crew };
+    if (!v.guide && !v.kicker && !v.destination && !v.motto && !crew.length) delete store.routes[name];
     else store.routes[name] = v;
     persist('‘' + name + '’ 항로 설정을 저장했어요');
     closeCfg();
