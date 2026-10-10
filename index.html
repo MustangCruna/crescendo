@@ -149,6 +149,7 @@
     border:1px solid var(--line); background:transparent; color:var(--muted);
     border-radius:999px; padding:3px 11px; font-size:.8rem;
   }
+  .chip .chip-n{ margin-left:6px; font-size:.72rem; opacity:.7; }
   .chip[aria-pressed="true"]{ border-color:var(--blossom); color:var(--text); background:rgba(244,184,201,.14); }
   .tag{
     display:inline-block; font-size:.72rem; color:var(--blossom);
@@ -265,6 +266,8 @@
     background:rgba(255,255,255,.06); border:1px solid var(--line); border-radius:12px; padding:10px 12px;
   }
   .panel textarea::placeholder, .panel input::placeholder{ color:var(--faint); }
+  .panel select{ width:100%; font:inherit; font-size:.92rem; color:var(--text); background:rgba(255,255,255,.06); border:1px solid var(--line); border-radius:12px; padding:10px 12px; }
+  .panel select option{ background:var(--sheet); color:var(--text); }
   .panel textarea{ resize:vertical; line-height:1.6; }
   .panel .hint{ font-size:.78rem; color:var(--muted); margin:4px 0 0; }
   .panel .row{ display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap; }
@@ -431,8 +434,8 @@
       </div>
       <div>
         <label for="fRoute">항로 (선택)</label>
-        <input id="fRoute" type="text" list="routeList" placeholder="예: 본편, 구미호 AU">
-        <datalist id="routeList"></datalist>
+        <select id="fRouteSel"></select>
+        <input id="fRoute" type="text" placeholder="새 항로 이름 (예: 고교 AU)" style="margin-top:6px" hidden>
       </div>
     </div>
     <div>
@@ -537,7 +540,7 @@
     destination: '영원의 너머, 두 사람만의 우주',
     me:          '희영',       // 서식(악보, 서약서)에 쓰이는 내 캐릭터
     partner:     '재훈',       // 상대 캐릭터
-    background:  'bg.jpg',           // 배경 이미지. 저장소에 bg.jpg를 올렸다면 'bg.jpg'
+    background:  'bg.jpg',     // 배경 이미지. 저장소에 bg.jpg를 올렸다면 'bg.jpg'
     readStyle:   'classic'     // 처음 보여줄 서식: classic, letter, log, score, vow
   };
 
@@ -891,27 +894,43 @@
     const dl = $(id); dl.replaceChildren();
     names.forEach(r => { const o = document.createElement('option'); o.value = r; dl.appendChild(o); });
   }
+  // 항로 설정에 만든 항로 + 일지에 쓰인 항로 = 카테고리 목록
+  function allRoutes(){
+    return [...new Set(Object.keys(store.routes || {}).concat(store.entries.map(e => e.route)).filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b, 'ko'));
+  }
+  const NEW_ROUTE_OPT = '\u0000new-route';
+  function fillRouteSelect(current){
+    const sel = $('fRouteSel'); sel.replaceChildren();
+    const opt = (v, t) => { const o = document.createElement('option'); o.value = v; o.textContent = t; sel.appendChild(o); };
+    opt('', '항로 없음');
+    allRoutes().forEach(r => opt(r, r));
+    opt(NEW_ROUTE_OPT, '+ 새 항로');
+    sel.value = current && allRoutes().includes(current) ? current : (current ? NEW_ROUTE_OPT : '');
+    $('fRoute').value = sel.value === NEW_ROUTE_OPT ? current : '';
+    $('fRoute').hidden = sel.value !== NEW_ROUTE_OPT;
+  }
   function renderFilters(){
     const byKo = (a, b) => a.localeCompare(b, 'ko');
-    const names = [...new Set(store.entries.map(e => e.route).filter(Boolean))].sort(byKo);
-    fillDatalist('routeList', names);
+    const names = allRoutes();
     fillDatalist('voyageList', [...new Set(store.entries.map(e => e.voyage).filter(Boolean))].sort(byKo));
     const hasNone = store.entries.some(e => !e.route);
     const box = $('routes');
     box.replaceChildren();
-    if (!names.length || names.length + (hasNone ? 1 : 0) < 2){ box.hidden = true; routeFilter = null; return; }
+    if (!names.length){ box.hidden = true; routeFilter = null; return; }
     if (routeFilter !== null && routeFilter !== '' && !names.includes(routeFilter)) routeFilter = null;
     box.hidden = false;
-    const add = (label, val) => {
+    const add = (label, val, count) => {
       const b = el('button', 'chip', label);
+      if (count != null) b.appendChild(el('span', 'chip-n', String(count)));
       b.type = 'button';
       b.setAttribute('aria-pressed', String(routeFilter === val));
       b.addEventListener('click', () => { routeFilter = val; showList(); });
       box.appendChild(b);
     };
     add('전체 항로', null);
-    names.forEach(r => add(r, r));
-    if (hasNone) add('항로 미정', '');
+    names.forEach(r => add(r, r, store.entries.filter(e => e.route === r).length));
+    if (hasNone && names.length) add('항로 미정', '');
   }
 
   function itemLi(e, nums, lastId, partNo){
@@ -1002,6 +1021,7 @@
         : loadState === 'error' ? (canEdit
             ? '깃허브에서 기록을 불러오지 못했어요 (' + loadError + '). DATA_URL이 raw 주소인지, 파일이 그 자리에 있는지 확인해 주세요.'
             : '항해일지를 불러오지 못했어요. 잠시 뒤에 다시 열어 주세요.')
+        : (!q && routeFilter) ? '이 항로엔 아직 일지가 없어요.' + (canEdit ? ' ‘일지 쓰기’를 누르면 이 항로로 바로 쓸 수 있어요.' : '')
         : (q || routeFilter !== null) ? '조건에 맞는 일지가 없어요. 검색어나 항로를 바꿔 보세요.'
         : (canEdit ? '‘일지 쓰기’를 눌러 첫 항해를 기록해 보세요.' : '아직 적힌 항해일지가 없어요.');
     }
@@ -1223,7 +1243,7 @@
     $('turns').replaceChildren();
     (e ? e.turns : [null]).forEach(t => addTurnBlock(t));
     $('fTitle').value = e ? e.title : '';
-    $('fRoute').value = e ? e.route : (preset.route != null ? preset.route : (routeFilter || ''));
+    fillRouteSelect(e ? e.route : (preset.route != null ? preset.route : (routeFilter || '')));
     $('fVoyage').value = e ? e.voyage : (preset.voyage || '');
     lastFocus = document.activeElement;
     $('sheet').hidden = false;
@@ -1235,13 +1255,21 @@
     if (lastFocus) lastFocus.focus();
   }
   $('addTurnBtn').addEventListener('click', () => addTurnBlock(null, true));
+  $('fRouteSel').addEventListener('change', ev => {
+    const isNew = ev.target.value === NEW_ROUTE_OPT;
+    $('fRoute').hidden = !isNew;
+    if (isNew) $('fRoute').focus();
+  });
   $('saveBtn').addEventListener('click', () => {
     const turns = collectTurns();
     if (!turns.some(t => t.reply.trim())){
       alert('AI 답변을 한 칸 이상 채워주세요.');
       $('turns').querySelector('.ta').focus(); return;
     }
-    const data = { turns, title:$('fTitle').value.trim(), route:$('fRoute').value.trim(), voyage:$('fVoyage').value.trim() };
+    const rsel = $('fRouteSel').value;
+    const route = rsel === NEW_ROUTE_OPT ? $('fRoute').value.trim() : rsel;
+    if (rsel === NEW_ROUTE_OPT && !route){ toast('새 항로 이름을 적거나 목록에서 항로를 골라 주세요'); $('fRoute').focus(); return; }
+    const data = { turns, title:$('fTitle').value.trim(), route, voyage:$('fVoyage').value.trim() };
     let id = editingId;
     if (id){
       Object.assign(store.entries.find(x => x.id === id), data);
@@ -1862,7 +1890,7 @@
     urlReady = true;
     const r = q.get('route');
     if (r){
-      const names = [...new Set(store.entries.map(e => e.route).filter(Boolean))];
+      const names = allRoutes();
       const hit = names.find(n => squash(n) === squash(r));
       routeFilter = hit || null;
     }
