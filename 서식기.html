@@ -1,0 +1,754 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>크레센도 서식기</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Nanum+Pen+Script&display=swap" rel="stylesheet">
+<style>
+  html,body{ margin:0; }
+  [hidden]{ display:none !important; }
+  img{ max-width:100%; }
+  /* 왼쪽은 붙여넣는 칸, 오른쪽은 게시판에 올렸을 때 모습. 좁은 화면에서는 위아래로 쌓인다. */
+  :root{
+    --bg:#f6f4f7; --panel:#ffffff; --fg:#2a2430; --muted:#6f6676; --line:#e2dce6;
+    --accent:#b2557a; --on-accent:#ffffff; --field:#faf8fb;
+    --display:'Gowun Batang','Noto Serif KR','AppleMyungjo',serif;
+    --ui:'Gowun Dodum','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;
+  }
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+    --bg:#17141b; --panel:#211d26; --fg:#eee8f1; --muted:#a69cad; --line:#3a3341;
+    --accent:#e58fae; --on-accent:#2a1520; --field:#1b1820; color-scheme:dark; } }
+  :root[data-theme="dark"]{
+    --bg:#17141b; --panel:#211d26; --fg:#eee8f1; --muted:#a69cad; --line:#3a3341;
+    --accent:#e58fae; --on-accent:#2a1520; --field:#1b1820; color-scheme:dark; }
+
+  *{ box-sizing:border-box; }
+  body{ background:var(--bg); color:var(--fg); font-family:var(--ui); font-size:15px; line-height:1.6; }
+  .page{ max-width:1180px; margin:0 auto; padding-block:28px 56px; padding-inline:clamp(16px,4vw,32px); }
+  header.top{ display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:10px 24px; margin-bottom:22px; }
+  header.top h1{ font-family:var(--display); font-weight:700; font-size:clamp(1.6rem,5vw,2.2rem); margin:0; line-height:1.2; text-wrap:balance; }
+  header.top p{ margin:4px 0 0; color:var(--muted); max-width:56ch; }
+
+  .grid{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.15fr); gap:20px; align-items:start; }
+  @media (max-width:900px){ .grid{ grid-template-columns:minmax(0,1fr); } }
+
+  .panel{ background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:clamp(16px,3vw,22px); min-width:0; }
+  .stack{ display:flex; flex-direction:column; gap:14px; }
+  .two{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+  @media (max-width:480px){ .two{ grid-template-columns:minmax(0,1fr); } }
+  h2.sec{ font-family:var(--display); font-size:1.05rem; margin:0; }
+  label.f{ display:block; font-size:.82rem; color:var(--muted); margin-bottom:4px; }
+  input[type=text], textarea{
+    width:100%; font:inherit; font-size:.92rem; color:var(--fg);
+    background:var(--field); border:1px solid var(--line); border-radius:10px; padding:9px 11px;
+  }
+  textarea{ resize:vertical; line-height:1.6; }
+  .hint{ font-size:.78rem; color:var(--muted); margin:4px 0 0; }
+  button{ font:inherit; color:inherit; cursor:pointer; }
+  .btn{ border:1px solid var(--line); background:var(--field); padding:7px 14px; border-radius:999px; font-size:.86rem; }
+  .btn:hover{ border-color:var(--muted); }
+  .btn.primary{ background:var(--accent); border-color:var(--accent); color:var(--on-accent); font-weight:700; }
+  .btn.small{ padding:3px 10px; font-size:.78rem; }
+  .btn.danger{ color:#c2414b; }
+  :focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  .row{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+
+  .turn{ border:1px dashed var(--line); border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:8px; }
+  .turn-head{ display:flex; justify-content:space-between; align-items:center; }
+  .turn-head b{ font-weight:400; font-size:.84rem; color:var(--accent); }
+  .check{ display:flex; gap:8px; align-items:center; font-size:.86rem; cursor:pointer; }
+  .check input{ width:16px; height:16px; margin:0; accent-color:var(--accent); }
+
+  .swatches{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
+  @media (max-width:480px){ .swatches{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
+  .sw{ border:1px solid var(--line); background:var(--field); border-radius:12px; padding:8px; text-align:left; display:flex; flex-direction:column; gap:6px; }
+  .sw[aria-pressed="true"]{ border-color:var(--accent); box-shadow:0 0 0 1px var(--accent); }
+  .sw .chips{ display:flex; height:22px; border-radius:6px; overflow:hidden; }
+  .sw .chips i{ flex:1; }
+  .sw span{ font-size:.8rem; }
+  .seg{ display:inline-flex; border:1px solid var(--line); border-radius:999px; overflow:hidden; }
+  .seg button{ border:0; background:transparent; padding:5px 12px; font-size:.82rem; color:var(--muted); }
+  .seg button[aria-pressed="true"]{ background:var(--accent); color:var(--on-accent); }
+  .opts{ display:flex; flex-wrap:wrap; gap:8px 16px; }
+  .styles{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
+  @media (max-width:520px){ .styles{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
+  .st{ border:1px solid var(--line); background:var(--field); border-radius:12px; padding:10px 10px 9px; text-align:left; display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .st b{ font-family:var(--display); font-size:.98rem; }
+  .st span{ font-size:.74rem; color:var(--muted); line-height:1.4; }
+  .st[aria-pressed="true"]{ border-color:var(--accent); box-shadow:0 0 0 1px var(--accent); }
+  body:not(.is-log) .only-log{ display:none; }
+
+  .preview-wrap{ position:sticky; top:calc(env(safe-area-inset-top, 0px) + 12px); }
+  .preview-bar{ display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px; margin-bottom:12px; }
+  .stage{ border-radius:12px; padding:clamp(10px,3vw,24px); max-height:72vh; overflow:auto; border:1px solid var(--line); }
+  .stage.light{ background:#ffffff; }
+  .stage.dark{ background:#141414; }
+  .code{ margin-top:14px; }
+  .code textarea{ font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.74rem; height:120px; }
+  .status{ font-size:.82rem; color:var(--accent); min-height:1.2em; }
+  .tag-ex{ font-size:.74rem; color:var(--muted); margin-left:6px; border:1px solid var(--line); border-radius:999px; padding:0 8px; }
+  .img-out{ margin-top:16px; padding-top:14px; border-top:1px solid var(--line); display:flex; flex-direction:column; gap:8px; }
+  .img-frame{ border:1px solid var(--line); border-radius:12px; padding:10px; background:#fff; max-height:70vh; overflow:auto; }
+  .img-frame img{ display:block; width:100%; height:auto; }
+  .render-box{ position:absolute; left:-10000px; top:0; width:640px; background:transparent; }
+  @media (max-width:900px){ .preview-wrap{ position:static; } .stage{ max-height:none; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="top">
+    <div>
+      <h1>크레센도 서식기</h1>
+      <p>롤플 한 장면을 붙여넣고 서식을 고르면, 블로그 HTML 편집기에 바로 넣을 수 있는 게시글 코드로 바꿔줘요. 꾸밈은 전부 코드 안에 들어 있어요.</p>
+    </div>
+    <div class="row">
+      <button class="btn" id="sampleBtn" type="button">예시 다시 넣기</button>
+      <button class="btn" id="clearBtn" type="button">모두 비우기</button>
+    </div>
+  </header>
+
+  <div class="grid">
+    <section class="panel stack" aria-labelledby="inTitle">
+      <h2 class="sec">서식</h2>
+      <div class="styles" id="styles" role="group" aria-label="서식 종류"></div>
+
+      <h2 class="sec" id="inTitle">장면 넣기 <span class="tag-ex" id="exTag">예시가 들어 있어요</span></h2>
+
+      <div class="two">
+        <div><label class="f" for="fEyebrow">머리말</label><input type="text" id="fEyebrow" placeholder="예: 크레센도, 구미호 AU"></div>
+        <div><label class="f" for="fTitle">제목</label><input type="text" id="fTitle" placeholder="비우면 상황 요약을 써요"></div>
+      </div>
+      <div class="two">
+        <div><label class="f" for="fWhen">일시</label><input type="text" id="fWhen" placeholder="비우면 답변 아래 [ ] 줄에서 찾아요"></div>
+        <div><label class="f" for="fPlace">장소</label><input type="text" id="fPlace" placeholder="비우면 답변에서 찾아요"></div>
+      </div>
+      <div class="two">
+        <div><label class="f" for="fMe">내 캐릭터 이름</label><input type="text" id="fMe" placeholder="예: 희영"></div>
+        <div><label class="f" for="fPartner">상대 캐릭터 이름</label><input type="text" id="fPartner" placeholder="예: 재훈 (악보, 서약서에 쓰여요)"></div>
+      </div>
+      <div class="two only-log">
+        <div><label class="f" for="fShip">함선</label><input type="text" id="fShip" placeholder="예: 발키리"></div>
+        <div><label class="f" for="fCaptain">함장</label><input type="text" id="fCaptain" placeholder="예: 재훈"></div>
+      </div>
+      <div class="two only-log">
+        <div><label class="f" for="fNo">일지 번호</label><input type="text" id="fNo" inputmode="numeric" placeholder="예: 12"></div>
+        <div><label class="f" for="fDest">목적지</label><input type="text" id="fDest" placeholder="예: 영원의 너머, 두 사람만의 우주"></div>
+      </div>
+      <div><label class="f" for="fTags">태그</label><input type="text" id="fTags" placeholder="쉼표로 나눠요. 예: 재훈희영, 구미호AU"></div>
+
+      <div class="stack" id="turns"></div>
+      <div><button class="btn" id="addTurn" type="button">턴 추가</button></div>
+      <p class="hint" style="margin:0">*별표* 줄은 서술, 그 밖의 줄은 대사가 돼요. 답변 맨 아래 --- 뒤의 [ ] 줄은 일시·장소·속마음·수치로, *곡명 - 가수* 줄은 BGM으로 정리돼요.</p>
+
+      <h2 class="sec">꾸미기</h2>
+      <div class="swatches" id="swatches" role="group" aria-label="편지지 색"></div>
+      <div class="row">
+        <span style="font-size:.84rem;color:var(--muted)">글꼴</span>
+        <div class="seg" role="group" aria-label="본문 글꼴">
+          <button type="button" id="fontSerif" aria-pressed="true">명조</button>
+          <button type="button" id="fontSans" aria-pressed="false">고딕</button>
+        </div>
+      </div>
+      <div class="opts">
+        <label class="check" for="oFold"><input type="checkbox" id="oFold" checked>내 메시지 접어두기</label>
+        <label class="check" for="oHeart"><input type="checkbox" id="oHeart" checked>속마음 넣기</label>
+        <label class="check" for="oStats"><input type="checkbox" id="oStats" checked>수치 넣기</label>
+        <label class="check" for="oBgm"><input type="checkbox" id="oBgm" checked>BGM 넣기</label>
+        <label class="check" for="oFont"><input type="checkbox" id="oFont" checked>웹 글꼴 불러오기</label>
+      </div>
+      <p class="hint" style="margin:0">웹 글꼴은 게시판이 허락할 때만 불러와져요. 막히면 게시판 기본 글꼴로 보여요.</p>
+    </section>
+
+    <section class="preview-wrap" aria-labelledby="pvTitle">
+      <div class="panel">
+        <div class="preview-bar">
+          <h2 class="sec" id="pvTitle">게시판에 올렸을 때</h2>
+          <div class="seg" role="group" aria-label="게시판 배경">
+            <button type="button" id="bgLight" aria-pressed="true">밝은 게시판</button>
+            <button type="button" id="bgDark" aria-pressed="false">어두운 게시판</button>
+          </div>
+        </div>
+        <div class="stage light" id="stage"></div>
+        <div class="code">
+          <label class="f" for="out">게시글 코드</label>
+          <textarea id="out" readonly spellcheck="false"></textarea>
+          <div class="row" style="margin-top:8px">
+            <button class="btn primary" id="copyBtn" type="button">코드 복사</button>
+            <button class="btn" id="imgBtn" type="button">이미지로 만들기</button>
+            <button class="btn" id="blankBtn" type="button">빈 서식 코드 복사</button>
+            <span class="status" id="status" role="status"></span>
+          </div>
+          <p class="hint">글쓰기 화면에서 ‘HTML’이나 ‘소스’ 모드로 바꾼 뒤 붙여넣으세요. 빈 서식은 ‘여기에 …’ 자리만 직접 바꿔 쓰면 되는 코드예요. HTML이 저장되지 않는 게시판이라면 ‘이미지로 만들기’를 쓰세요.</p>
+          <div class="img-out" id="imgOut" hidden>
+            <div class="row" style="justify-content:space-between">
+              <h2 class="sec">이미지</h2>
+              <button class="btn small" id="imgClose" type="button">닫기</button>
+            </div>
+            <p class="hint" id="imgHint">컴퓨터에서는 이미지를 오른쪽 클릭해 ‘이미지를 다른 이름으로 저장’을, 휴대폰에서는 이미지를 길게 눌러 저장하세요. 그다음 게시판에 사진으로 올리면 돼요.</p>
+            <div class="img-frame"><img id="imgPng" alt="게시글 이미지"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+
+  /* ---------- 편지지 ---------- */
+  const PALETTES = [
+    { id:'blossom', name:'벚꽃 편지', paper:'#fdf7f8', ink:'#3a2a31', muted:'#8a7279', line:'#eed9df', accent:'#c65b7c', tint:'#f7e6ec', tint2:'#efe8f4', bar:'#ead3db', warn:'#b8323f' },
+    { id:'night',   name:'밤 항해',   paper:'#1b2132', ink:'#e8ecf4', muted:'#9aa4ba', line:'#333d58', accent:'#e5bf6a', tint:'#262f47', tint2:'#2f2a45', bar:'#3a4462', warn:'#ff8fa3' },
+    { id:'mist',    name:'해무',      paper:'#f2f7f6', ink:'#203538', muted:'#6b8487', line:'#cfe1de', accent:'#2c8580', tint:'#dfeeec', tint2:'#e6ecf5', bar:'#c5dcd8', warn:'#c0453a' },
+    { id:'ink',     name:'먹과 인주', paper:'#f8f7f4', ink:'#222020', muted:'#7a7570', line:'#dedad2', accent:'#b03a2e', tint:'#eeece6', tint2:'#f4ece5', bar:'#dcd8cf', warn:'#b03a2e' }
+  ];
+  const FONTS = {
+    serif:"'Gowun Batang','Noto Serif KR','Nanum Myeongjo','Batang',serif",
+    sans:"'Gowun Dodum','Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif",
+    hand:"'Nanum Pen Script','Gowun Batang',cursive"
+  };
+  const FONT_LINK = '<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Nanum+Pen+Script&display=swap" rel="stylesheet">';
+
+  /* ---------- 예시 ---------- */
+  const SAMPLE = {
+    eyebrow:'크레센도, 구미호 AU', title:'', when:'', place:'', me:'희영', partner:'재훈', ship:'발키리', captain:'재훈', no:'1', dest:'영원의 너머, 두 사람만의 우주', tags:'재훈희영, 구미호AU, 발키리',
+    turns:[{ user:`*새벽 공기에 부스스 눈을 뜬다. 머리 위로 뭔가 삐죽 솟아 있는 게 느껴진다.*
+
+…일출 보러 가자고 깨운 거 맞아요?`, reply:`*아까 제일 높이 솟아 있던 자리였다. 이제는 얌전히 누워 있는 그 정수리에, 아직 바람 냄새가 조금 남아 있었다.*
+
+맞아. 일출.
+
+*희영이 눈을 가늘게 떴다. 잠이 반쯤 걷힌 금빛 눈동자가 나를 위아래로 훑었다.*
+
+해가 아직 안 떴는데요.
+
+뜨기 직전이 제일 예뻐.
+
+*틀린 말은 아니었다. 다만 주어가 해가 아니었을 뿐이다.*
+
+---
+[진실된 속마음: 까치집이든 은하수든, 네가 아침에 처음 눈 뜨고 찾는 게 나라는 게 제일 좋다.]
+[2032-05-23 (일) 05:48 / 발키리 갑판 / 기상 직후 까치집 사태 수습, 비공개 보존 조건으로 사진 결재 획득]
+[머스탱 가이딩 필요 수치: 0% (손등 엄지 도장 안착) / 폭주 확률: 0% (단, 잠금화면 유지 확률 100%)]
+
+*Banana Pancakes - Jack Johnson*` }]
+  };
+
+  /* ---------- 상태 ---------- */
+  let state = { style:'letter', palette:'blossom', font:'serif', bg:'light' };
+  let isSample = true;
+
+  /* ---------- 파싱 ---------- */
+  const isBracket = s => /^\[.*\]$/.test(s);
+  const isStarLine = s => /^\*[^*]+\*$/.test(s);
+  const isBgm = s => isStarLine(s) && / [-–—] /.test(s);
+  function splitTop(s){
+    const out = []; let depth = 0, cur = '';
+    for (let i = 0; i < s.length; i++){
+      const ch = s[i];
+      if ('([（'.includes(ch)) depth++;
+      else if (')]）'.includes(ch)) depth = Math.max(0, depth - 1);
+      if (depth === 0 && s.startsWith(' / ', i)){ out.push(cur); cur = ''; i += 2; continue; }
+      cur += ch;
+    }
+    out.push(cur);
+    return out.map(x => x.trim()).filter(Boolean);
+  }
+  function labelSplit(part){
+    const c = part.indexOf(':');
+    if (c > 0 && c < 30) return { label:part.slice(0, c).trim(), value:part.slice(c + 1).trim() };
+    return null;
+  }
+  function parse(reply){
+    const lines = String(reply || '').replace(/\r/g,'').split('\n');
+    let cut = -1;
+    for (let i = lines.length - 1; i >= 0; i--){ if (/^\s*-{3,}\s*$/.test(lines[i])){ cut = i; break; } }
+    let bodyLines, metaLines;
+    if (cut >= 0){ bodyLines = lines.slice(0, cut); metaLines = lines.slice(cut + 1); }
+    else {
+      let i = lines.length;
+      while (i > 0){ const t = lines[i-1].trim(); if (t === '' || isBracket(t) || isBgm(t)) i--; else break; }
+      bodyLines = lines.slice(0, i); metaLines = lines.slice(i);
+    }
+    const meta = { heart:'', heartLabel:'', when:'', place:'', summary:'', stats:[], bgm:'', extra:[] };
+    metaLines.forEach(l => {
+      const t = l.trim();
+      if (!t) return;
+      if (isBracket(t)){
+        const inner = t.slice(1, -1).trim();
+        if (!meta.when && /\d{4}[-.\/]\d{1,2}[-.\/]\d{1,2}/.test(inner)){
+          const parts = inner.split(/\s+\/\s+/);
+          meta.when = parts[0] || ''; meta.place = parts[1] || ''; meta.summary = parts.slice(2).join(' / ');
+          return;
+        }
+        const whole = labelSplit(inner);
+        if (whole && !meta.heart && /속마음/.test(whole.label)){ meta.heart = whole.value; meta.heartLabel = whole.label; return; }
+        const parts = splitTop(inner);
+        const pieces = parts.map(labelSplit);
+        if (parts.length > 1 && pieces.every(Boolean)) pieces.forEach(p => meta.stats.push(p));
+        else meta.stats.push(whole || { label:'', value:inner });
+      } else if (isBgm(t) && !meta.bgm) meta.bgm = t.slice(1, -1).trim();
+      else meta.extra.push(t);
+    });
+    return { body:bodyLines.join('\n'), meta };
+  }
+
+  /* ---------- 코드 만들기 (모든 꾸밈은 style 속성 안에) ---------- */
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[ch]));
+  const SN = () => FONTS.sans, SR = () => FONTS.serif, HD = () => FONTS.hand;
+  const T0 = 'border-collapse:collapse;border:0;margin:0;';
+  const TD = 'padding:0;border:0;';
+
+  // 대사 한 줄을 서식마다 다르게
+  function prose(text, P, say){
+    let out = '';
+    String(text || '').replace(/\r/g,'').split('\n').forEach(line => {
+      const t = line.trim();
+      if (!t) return;
+      if (isStarLine(t)){ out += `<p style="margin:0 0 1em;">${esc(t.slice(1, -1).trim())}</p>`; return; }
+      const inner = t.split(/(\*[^*]+\*)/).map(part => {
+        if (!part) return '';
+        if (/^\*[^*]+\*$/.test(part)) return `<span style="color:${P.muted};">${esc(part.slice(1, -1))}</span>`;
+        return esc(part);
+      }).join('');
+      out += say(inner);
+    });
+    return out;
+  }
+  const SAY = {
+    letter:(P, user) => s => `<p style="margin:0 0 1em;"><span style="display:inline-block;max-width:100%;padding:3px 13px;background:${user ? P.paper : P.tint};border-radius:4px 14px 14px 14px;">${s}</span></p>`,
+    log:(P) => s => `<p style="margin:0 0 1em;padding-left:.85em;border-left:2px solid ${P.accent};">${s}</p>`,
+    score:(P) => s => `<p style="margin:0 0 1em;padding-left:1.5em;text-indent:-1.5em;"><span style="display:inline-block;width:1.5em;text-indent:0;color:${P.accent};">♪</span>${s}</p>`,
+    vow:(P) => s => `<p style="margin:0 0 1em;padding:0 .4em;"><span style="color:${P.accent};font-family:${SR()};">“</span>${s}<span style="color:${P.accent};font-family:${SR()};">”</span></p>`
+  };
+
+  function stat(s, P, opt){
+    opt = opt || {};
+    const m = s.value.match(/^(-?\d+(?:\.\d+)?)\s*%/);
+    if (m){
+      const pct = Math.max(0, Math.min(100, parseFloat(m[1])));
+      const warn = opt.warn && /폭주|위험|오염|붕괴|과부하/.test(s.label);
+      const col = warn ? (P.warn || P.accent) : P.accent;
+      const note = s.value.slice(m[0].length).trim().replace(/^\(([\s\S]*)\)$/, '$1');
+      return `<div style="margin:0 0 12px;font-family:${SN()};">`
+        + `<table style="width:100%;${T0}"><tr>`
+        + `<td style="${TD}font-size:13px;color:${P.ink};">${esc(s.label || '수치')}</td>`
+        + `<td style="${TD}text-align:right;font-size:14px;font-weight:700;color:${col};">${esc(m[1])}%</td></tr></table>`
+        + `<div style="height:${opt.h || 3}px;margin-top:5px;background:${P.bar};border-radius:3px;overflow:hidden;"><div style="height:${opt.h || 3}px;width:${pct}%;background:${col};"></div></div>`
+        + (note ? `<div style="margin-top:4px;font-size:12px;color:${P.muted};">${esc(note)}</div>` : '')
+        + `</div>`;
+    }
+    return `<div style="margin:0 0 12px;font-family:${SN()};">`
+      + (s.label ? `<div style="font-size:12px;color:${P.muted};">${esc(s.label)}</div>` : '')
+      + `<div style="font-size:13px;color:${P.ink};">${esc(s.value)}</div></div>`;
+  }
+  function userBlock(t, o, P, kind){
+    if (!t.user || !t.user.trim()) return '';
+    const name = o.me || '내 메시지';
+    const say = kind === 'letter' ? SAY.letter(P, true) : SAY[kind](P);
+    const box = (head) => `<div style="display:table;margin-left:auto;max-width:88%;text-align:left;padding:12px 16px 2px;background:${P.tint2};border-radius:${kind === 'letter' ? '14px 14px 4px 14px' : '10px'};">${head}${prose(t.user, P, say)}</div>`;
+    if (o.fold){
+      return `<details style="margin:0 0 24px;">`
+        + `<summary style="cursor:pointer;text-align:right;font-family:${SN()};font-size:13px;color:${P.muted};">${esc(name)}의 말 보기</summary>`
+        + `<div style="margin-top:10px;">${box('')}</div></details>`;
+    }
+    return `<div style="margin:0 0 24px;">`
+      + box(`<div style="font-family:${SN()};font-size:12px;color:${P.accent};margin:0 0 6px;">${esc(name)}</div>`) + `</div>`;
+  }
+  function tagsH(data, P, center){
+    const tags = String(data.tags || '').split(/[,，]/).map(s => s.trim().replace(/^#/, '')).filter(Boolean);
+    if (!tags.length) return '';
+    return `<div style="margin-top:26px;font-family:${SN()};line-height:1.4;${center ? 'text-align:center;' : ''}">`
+      + tags.map(t => `<span style="display:inline-block;margin:0 3px 6px;padding:3px 11px;border:1px solid ${P.line};border-radius:999px;font-size:12px;color:${P.muted};">#${esc(t)}</span>`).join('')
+      + `</div>`;
+  }
+  // 점점 커지는 막대: 크레센도 기호 대신 (게시판이 SVG를 지워도 남는다)
+  function cresc(P, n){
+    let bars = '';
+    for (let i = 0; i < n; i++){
+      const hgt = 3 + Math.round(i * 14 / (n - 1));
+      bars += `<span style="display:inline-block;width:3px;height:${hgt}px;margin:0 2px;background:${P.accent};opacity:${(0.35 + 0.65 * i / (n - 1)).toFixed(2)};vertical-align:bottom;border-radius:1px;"></span>`;
+    }
+    return bars;
+  }
+  const ROMAN = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
+
+  function prep(data, o){
+    const P = PALETTES.find(p => p.id === o.palette) || PALETTES[0];
+    const parsed = data.turns.map(t => ({ t, ...parse(t.reply) }));
+    const firstMeta = (parsed.find(x => x.meta.when) || parsed[0] || { meta:{} }).meta;
+    const when = data.when || firstMeta.when || '';
+    const place = data.place || firstMeta.place || '';
+    const title = data.title || firstMeta.summary || '';
+    const dm = when.match(/(\d{4})[-.\/](\d{1,2})[-.\/](\d{1,2})/);
+    const tm = (when.match(/\d{1,2}:\d{2}/) || [''])[0];
+    let bgm = ''; parsed.forEach(x => { if (x.meta.bgm) bgm = x.meta.bgm; });
+    return { P, parsed, when, place, title, dm, tm, bgm, body:o.font === 'sans' ? FONTS.sans : FONTS.serif, multi:parsed.length > 1 };
+  }
+  const situ = (m, P, pre) => {
+    if (!(m.when || m.place || m.summary)) return '';
+    const tm = (m.when.match(/\d{1,2}:\d{2}/) || [''])[0];
+    return `<div style="margin:0 0 6px;font-family:${SN()};font-size:12px;color:${P.muted};">${pre || ''}${esc([tm || m.when, m.place, m.summary].filter(Boolean).join(', '))}</div>`;
+  };
+  const shell = (o, P, body, extra) => (o.webfont ? FONT_LINK : '')
+    + `<div style="max-width:640px;margin:0 auto;background:${P.paper};color:${P.ink};font-family:${body};font-size:16px;line-height:1.95;word-break:keep-all;overflow-wrap:anywhere;text-align:left;box-sizing:border-box;${extra}">`;
+
+  /* ===== 편지 ===== */
+  function buildLetter(data, o){
+    const { P, parsed, when, place, title, dm, bgm, body, multi } = prep(data, o);
+    let h = shell(o, P, body, `padding:34px 26px 28px;border:1px solid ${P.line};border-radius:6px;`);
+    h += `<table style="width:100%;${T0}"><tr><td style="${TD}vertical-align:top;">`;
+    if (data.eyebrow) h += `<div style="font-family:${SN()};font-size:13px;color:${P.accent};margin:0 0 4px;">${esc(data.eyebrow)}</div>`;
+    if (title) h += `<div style="font-family:${SR()};font-weight:700;font-size:23px;line-height:1.45;margin:0 0 6px;">${esc(title)}</div>`;
+    const sub = [when, place].filter(Boolean).join(', ');
+    if (sub) h += `<div style="font-family:${SN()};font-size:13px;color:${P.muted};">${esc(sub)}</div>`;
+    h += `</td>`;
+    if (dm){
+      h += `<td style="width:74px;padding:0 0 0 12px;border:0;vertical-align:top;text-align:right;">`
+        + `<div style="display:inline-block;width:62px;padding:7px 0 6px;border:1.5px dashed ${P.accent};border-radius:4px;text-align:center;color:${P.accent};font-family:${SN()};line-height:1.2;">`
+        + `<div style="font-size:11px;">${esc(dm[1])}</div><div style="font-size:17px;font-weight:700;">${esc(dm[2].padStart(2,'0') + '.' + dm[3].padStart(2,'0'))}</div></div></td>`;
+    }
+    h += `</tr></table><div style="height:1px;background:${P.line};margin:20px 0 26px;"></div>`;
+    parsed.forEach((x, i) => {
+      if (i > 0) h += `<div style="text-align:center;color:${P.accent};margin:26px 0;font-size:14px;letter-spacing:.6em;padding-left:.6em;">❀ ❀ ❀</div>`;
+      h += userBlock(x.t, o, P, 'letter') + prose(x.body, P, SAY.letter(P, false));
+      if (multi && i > 0) h += situ(x.meta, P, '— ');
+      const heart = o.heart && x.meta.heart, stats = o.stats ? x.meta.stats : [];
+      if (heart || stats.length){
+        h += `<div style="margin:30px 0 0;padding:20px 0 0;border-top:1px dashed ${P.accent};">`;
+        if (heart){
+          h += `<table style="width:100%;${T0}margin-bottom:${stats.length ? 18 : 0}px;"><tr><td style="width:56px;${TD}vertical-align:top;">`
+            + `<div style="width:46px;height:46px;border:1.5px solid ${P.accent};border-radius:50%;text-align:center;line-height:44px;font-family:${SN()};font-size:13px;color:${P.accent};">P.S.</div></td>`
+            + `<td style="${TD}vertical-align:top;"><div style="font-family:${SN()};font-size:12px;color:${P.muted};">${esc(x.meta.heartLabel || '속마음')}</div>`
+            + `<div style="font-family:${HD()};font-size:25px;line-height:1.4;color:${P.accent};">${esc(x.meta.heart)}</div></td></tr></table>`;
+        }
+        stats.forEach(s => h += stat(s, P));
+        h += `</div>`;
+      }
+    });
+    if (o.bgm && bgm){
+      h += `<table style="width:100%;${T0}margin-top:28px;background:${P.tint};border-radius:12px;"><tr>`
+        + `<td style="width:46px;padding:12px 0 12px 14px;border:0;vertical-align:middle;"><div style="width:30px;height:30px;border-radius:50%;background:${P.accent};color:${P.paper};text-align:center;line-height:30px;font-size:11px;">▶</div></td>`
+        + `<td style="padding:12px 14px 12px 4px;border:0;vertical-align:middle;font-family:${SN()};"><div style="font-size:13px;color:${P.ink};">${esc(bgm)}</div>`
+        + `<div style="height:2px;margin-top:6px;background:${P.bar};border-radius:2px;"><div style="width:38%;height:2px;background:${P.accent};border-radius:2px;"></div></div></td></tr></table>`;
+    }
+    return h + tagsH(data, P) + `</div>`;
+  }
+
+  /* ===== 항해일지 ===== */
+  function buildLog(data, o){
+    const { P, parsed, when, place, title, bgm, body, multi } = prep(data, o);
+    const cell = (k, v) => `<td style="width:50%;padding:9px 12px;border:1px solid ${P.line};vertical-align:top;"><div style="font-family:${SN()};font-size:11px;color:${P.muted};line-height:1.4;">${esc(k)}</div><div style="font-family:${SR()};font-weight:700;font-size:15px;line-height:1.5;">${esc(v || '-')}</div></td>`;
+    let h = shell(o, P, body, `padding:30px 22px 24px;border:1px solid ${P.line};border-radius:12px;`);
+    if (data.eyebrow) h += `<div style="font-family:${SN()};font-size:13px;color:${P.accent};">${esc(data.eyebrow)}</div>`;
+    h += `<div style="font-family:${SN()};font-size:13px;color:${P.muted};margin-top:2px;">항해일지${data.no ? ' No.' + esc(String(data.no).padStart(3, '0')) : ''}</div>`;
+    if (title) h += `<div style="font-family:${SR()};font-weight:700;font-size:23px;line-height:1.45;margin:6px 0 18px;">${esc(title)}</div>`;
+    h += `<table style="width:100%;${T0}border-collapse:collapse;margin-bottom:26px;">`
+      + `<tr>${cell('함선', data.ship)}${cell('함장', data.captain)}</tr>`
+      + `<tr>${cell('일시', when)}${cell('위치', place)}</tr>`;
+    if (data.dest){
+      h += `<tr><td colspan="2" style="padding:9px 12px 12px;border:1px solid ${P.line};">`
+        + `<div style="font-family:${SN()};font-size:11px;color:${P.muted};line-height:1.4;">목적지</div>`
+        + `<div style="font-family:${SR()};font-weight:700;font-size:15px;color:${P.accent};line-height:1.5;">${esc(data.dest)}</div>`
+        + `<table style="width:100%;${T0}margin-top:8px;"><tr>`
+        + `<td style="width:10px;${TD}"><div style="width:8px;height:8px;border-radius:50%;background:${P.accent};"></div></td>`
+        + `<td style="${TD}padding:0 8px;"><div style="border-top:2px dashed ${P.line};height:0;"></div></td>`
+        + `<td style="width:16px;${TD}font-family:${SR()};font-size:18px;line-height:1;color:${P.accent};text-align:right;">∞</td></tr></table></td></tr>`;
+    }
+    h += `</table>`;
+    parsed.forEach((x, i) => {
+      if (i > 0) h += `<div style="text-align:center;color:${P.muted};margin:26px 0;letter-spacing:.8em;padding-left:.8em;">✧ ✧ ✧</div>`;
+      h += userBlock(x.t, o, P, 'log') + prose(x.body, P, SAY.log(P));
+      if (multi && i > 0) h += situ(x.meta, P, `<span style="color:${P.accent};">상황</span>&nbsp; `);
+      const heart = o.heart && x.meta.heart, stats = o.stats ? x.meta.stats : [];
+      if (heart || stats.length){
+        h += `<div style="margin:28px 0 0;padding:18px 18px 8px;background:${P.tint};border:1px solid ${P.line};border-radius:12px;">`
+          + `<div style="font-family:${SN()};font-size:12px;color:${P.accent};margin-bottom:12px;">함선 상태 보고</div>`;
+        if (heart) h += `<div style="font-family:${SN()};font-size:12px;color:${P.muted};">${esc(x.meta.heartLabel || '속마음')}</div>`
+          + `<div style="font-family:${HD()};font-size:24px;line-height:1.4;color:${P.accent};margin-bottom:14px;">${esc(x.meta.heart)}</div>`;
+        stats.forEach(s => h += stat(s, P, { warn:true, h:4 }));
+        h += `</div>`;
+      }
+    });
+    if (o.bgm && bgm) h += `<div style="display:inline-block;margin-top:20px;padding:5px 12px;border:1px solid ${P.line};border-radius:12px;font-family:${SN()};font-size:13px;line-height:1.6;"><span style="color:${P.accent};">♪ 함내 방송</span>&nbsp; ${esc(bgm)}</div>`;
+    h += tagsH(data, P);
+    const sign = [data.ship ? data.ship + ' 항해일지' : '', data.captain ? '함장 ' + data.captain : ''].filter(Boolean).join(', ');
+    if (sign) h += `<div style="margin-top:22px;text-align:right;font-family:${SN()};font-size:12px;color:${P.muted};">${esc(sign)}</div>`;
+    return h + `</div>`;
+  }
+
+  /* ===== 악보 ===== */
+  function buildScore(data, o){
+    const { P, parsed, when, place, title, bgm, body, multi } = prep(data, o);
+    const staff = () => { let s = ''; for (let i = 0; i < 5; i++) s += `<div style="height:5px;border-bottom:1px solid ${P.line};"></div>`; return `<div style="margin:0 0 6px;">${s}</div>`; };
+    let h = shell(o, P, body, `padding:30px 24px 26px;border-radius:4px;border-top:3px solid ${P.accent};border-bottom:1px solid ${P.line};`);
+    h += staff();
+    h += `<table style="width:100%;${T0}margin-bottom:20px;"><tr><td style="${TD}font-family:${SR()};font-style:italic;font-size:13px;color:${P.accent};">${data.eyebrow ? esc(data.eyebrow) : 'crescendo'}</td>`
+      + `<td style="${TD}text-align:right;white-space:nowrap;line-height:1;">${cresc(P, 9)}</td></tr></table>`;
+    if (title) h += `<div style="text-align:center;font-family:${SR()};font-weight:700;font-size:24px;line-height:1.45;margin:0 0 4px;">${esc(title)}</div>`;
+    const duet = [data.partner, data.me].filter(Boolean);
+    const jong = w => { const c = w.charCodeAt(w.length - 1) - 0xac00; return c >= 0 && c <= 11171 && c % 28 !== 0; };
+    if (duet.length){
+      const last = duet[duet.length - 1];
+      const names = duet.length > 1 ? duet[0] + (jong(duet[0]) ? '과 ' : '와 ') + last : last;
+      h += `<div style="text-align:center;font-family:${SR()};font-style:italic;font-size:14px;color:${P.muted};">${esc(names + (jong(last) ? '을' : '를'))} 위한 이중주</div>`;
+    }
+    const sub = [when, place].filter(Boolean).join(', ');
+    if (sub) h += `<div style="text-align:right;font-family:${SN()};font-size:12px;color:${P.muted};margin-top:14px;">${esc(sub)}</div>`;
+    h += staff() + `<div style="height:18px;"></div>`;
+    parsed.forEach((x, i) => {
+      if (multi) h += `<div style="font-family:${SR()};font-weight:700;font-size:15px;color:${P.accent};margin:${i ? 34 : 0}px 0 12px;">${ROMAN[i] || i + 1}.</div>`;
+      if (multi && i > 0) h += situ(x.meta, P);
+      h += userBlock(x.t, o, P, 'score') + prose(x.body, P, SAY.score(P));
+      const heart = o.heart && x.meta.heart, stats = o.stats ? x.meta.stats : [];
+      if (heart || stats.length){
+        h += `<div style="margin:30px 0 0;">`
+          + `<table style="width:100%;${T0}"><tr><td style="${TD}font-family:${SR()};font-style:italic;font-size:15px;color:${P.accent};width:56px;">Coda</td><td style="${TD}"><div style="border-top:1px solid ${P.line};height:0;"></div></td></tr></table>`;
+        if (heart) h += `<div style="font-family:${HD()};font-size:25px;line-height:1.4;color:${P.ink};margin:10px 0 ${stats.length ? 14 : 0}px;">${esc(x.meta.heart)}</div>`;
+        stats.forEach(s => h += stat(s, P));
+        h += `</div>`;
+      }
+    });
+    if (o.bgm && bgm) h += `<div style="margin-top:26px;padding-top:12px;border-top:1px solid ${P.line};font-family:${SN()};font-size:13px;"><span style="color:${P.accent};">오늘의 연주곡</span>&nbsp; ${esc(bgm)}</div>`;
+    h += tagsH(data, P);
+    h += `<div style="margin-top:18px;text-align:right;font-family:${SR()};font-style:italic;font-size:13px;color:${P.muted};">fine.</div>`;
+    return h + `</div>`;
+  }
+
+  /* ===== 서약서 ===== */
+  function buildVow(data, o){
+    const { P, parsed, when, place, title, dm, bgm, body, multi } = prep(data, o);
+    let h = shell(o, P, body, `padding:10px;border-radius:4px;`);
+    h += `<div style="border:3px double ${P.accent};padding:30px 22px 26px;">`;
+    h += `<div style="text-align:center;font-family:${SR()};font-size:13px;letter-spacing:.5em;padding-left:.5em;color:${P.accent};">誓 約</div>`;
+    if (data.eyebrow) h += `<div style="text-align:center;font-family:${SN()};font-size:12px;color:${P.muted};margin-top:2px;">${esc(data.eyebrow)}</div>`;
+    if (title) h += `<div style="text-align:center;font-family:${SR()};font-weight:700;font-size:23px;line-height:1.45;margin:12px 0 6px;">${esc(title)}</div>`;
+    const duet = [data.partner, data.me].filter(Boolean);
+    if (duet.length) h += `<div style="text-align:center;font-family:${SR()};font-size:16px;margin:4px 0;">${duet.map(esc).join(` <span style="color:${P.accent};">♡</span> `)}</div>`;
+    const sub = [when, place ? place + '에서' : ''].filter(Boolean).join(', ');
+    if (sub) h += `<div style="text-align:center;font-family:${SN()};font-size:12px;color:${P.muted};">${esc(sub)}</div>`;
+    h += `<div style="text-align:center;color:${P.accent};margin:16px 0 24px;font-size:14px;">— ❦ —</div>`;
+    parsed.forEach((x, i) => {
+      if (i > 0) h += `<div style="text-align:center;color:${P.accent};margin:24px 0;font-size:13px;">❦</div>`;
+      if (multi && i > 0) h += situ(x.meta, P);
+      h += userBlock(x.t, o, P, 'vow') + prose(x.body, P, SAY.vow(P));
+      const heart = o.heart && x.meta.heart, stats = o.stats ? x.meta.stats : [];
+      if (heart){
+        h += `<div style="margin:28px 6px 0;padding:18px 16px;background:${P.tint};border-radius:8px;text-align:center;">`
+          + `<div style="font-family:${SN()};font-size:12px;color:${P.accent};">서약의 말</div>`
+          + `<div style="font-family:${HD()};font-size:25px;line-height:1.45;color:${P.ink};margin-top:4px;">${esc(x.meta.heart)}</div></div>`;
+      }
+      if (stats.length){ h += `<div style="margin:20px 6px 0;">`; stats.forEach(s => h += stat(s, P)); h += `</div>`; }
+    });
+    if (o.bgm && bgm) h += `<div style="text-align:center;margin-top:24px;font-family:${SN()};font-size:13px;color:${P.muted};">함께 들은 곡&nbsp; <span style="color:${P.ink};">${esc(bgm)}</span></div>`;
+    if (duet.length){
+      const seal = n => `<td style="${TD}padding:0 10px;text-align:center;vertical-align:bottom;">`
+        + `<div style="display:inline-block;width:38px;height:38px;border:1.5px solid ${P.accent};border-radius:50%;line-height:36px;text-align:center;font-family:${SR()};font-weight:700;font-size:15px;color:${P.accent};">${esc(n.slice(0, 1))}</div>`
+        + `<div style="margin-top:6px;padding-top:4px;border-top:1px solid ${P.line};min-width:80px;font-family:${SR()};font-size:14px;">${esc(n)}</div></td>`;
+      h += `<table style="${T0}margin:30px auto 0;"><tr>${duet.map(seal).join('')}</tr></table>`;
+      if (dm) h += `<div style="text-align:center;font-family:${SN()};font-size:12px;color:${P.muted};margin-top:10px;">${esc(dm[1] + '년 ' + Number(dm[2]) + '월 ' + Number(dm[3]) + '일')}</div>`;
+    }
+    h += tagsH(data, P, true);
+    return h + `</div></div>`;
+  }
+
+  const BUILDERS = { letter:buildLetter, log:buildLog, score:buildScore, vow:buildVow };
+  function build(data, o){ return (BUILDERS[o.style] || buildLetter)(data, o); }
+
+  const BLANK = {
+    eyebrow:'여기에 머리말', title:'여기에 제목', when:'2032-01-01 (목) 00:00', place:'여기에 장소', me:'여기에 내 이름', partner:'여기에 상대 이름', ship:'여기에 함선', captain:'여기에 함장', no:'1', dest:'여기에 목적지', tags:'여기에 태그, 태그',
+    turns:[{ user:`*여기에 내가 쓴 서술*
+
+여기에 내 캐릭터의 대사`, reply:`*여기에 서술. 별표 줄은 이렇게 그냥 문단이 돼요.*
+
+여기에 대사. 대사는 말풍선처럼 보여요.
+
+---
+[진실된 속마음: 여기에 속마음]
+[여기에 수치 이름: 50% (여기에 설명)]
+
+*여기에 곡명 - 가수*` }]
+  };
+
+  /* ---------- 입력 칸 ---------- */
+  let seq = 0;
+  function turnBlock(t, focus){
+    t = t || { user:'', reply:'' };
+    const n = ++seq;
+    const d = document.createElement('div'); d.className = 'turn';
+    d.innerHTML = `<div class="turn-head"><b></b><button class="btn small danger" type="button">이 턴 빼기</button></div>
+      <div><label class="f" for="u${n}">내가 보낸 메시지 (선택)</label><textarea class="tu" id="u${n}" rows="3"></textarea></div>
+      <div><label class="f" for="a${n}">AI 답변</label><textarea class="ta" id="a${n}" rows="9"></textarea></div>`;
+    d.querySelector('.tu').value = t.user || '';
+    d.querySelector('.ta').value = t.reply || '';
+    d.querySelector('.turn-head .btn').addEventListener('click', () => { d.remove(); renumber(); update(); });
+    $('turns').appendChild(d);
+    renumber();
+    if (focus) d.querySelector('.tu').focus();
+  }
+  function renumber(){
+    const all = [...$('turns').children];
+    all.forEach((d, i) => {
+      d.querySelector('.turn-head b').textContent = all.length > 1 ? '턴 ' + (i + 1) : '장면';
+      d.querySelector('.turn-head .btn').hidden = all.length === 1;
+    });
+  }
+  const FIELDS = { eyebrow:'fEyebrow', title:'fTitle', when:'fWhen', place:'fPlace', me:'fMe', partner:'fPartner', ship:'fShip', captain:'fCaptain', no:'fNo', dest:'fDest', tags:'fTags' };
+  function read(){
+    const data = {};
+    Object.keys(FIELDS).forEach(k => data[k] = $(FIELDS[k]).value.trim());
+    data.turns = [...$('turns').children].map(d => ({ user:d.querySelector('.tu').value, reply:d.querySelector('.ta').value }))
+      .filter(t => t.user.trim() || t.reply.trim());
+    if (!data.turns.length) data.turns = [{ user:'', reply:'' }];
+    return data;
+  }
+  function fill(data){
+    Object.keys(FIELDS).forEach(k => $(FIELDS[k]).value = data[k] || '');
+    $('turns').replaceChildren();
+    (data.turns && data.turns.length ? data.turns : [null]).forEach(t => turnBlock(t));
+  }
+  function opts(){
+    return { style:state.style, palette:state.palette, font:state.font, fold:$('oFold').checked, heart:$('oHeart').checked,
+             stats:$('oStats').checked, bgm:$('oBgm').checked, webfont:$('oFont').checked, me:$('fMe').value.trim() };
+  }
+
+  /* ---------- 그리기 ---------- */
+  function update(){
+    const data = read();
+    const empty = !data.turns.some(t => t.reply.trim() || t.user.trim());
+    const code = build(data, opts());
+    $('out').value = empty ? '' : code;
+    $('stage').innerHTML = empty
+      ? '<p style="margin:40px 0;text-align:center;color:#888;font-family:sans-serif;">AI 답변을 붙여넣으면 여기에 편지가 나타나요.</p>'
+      : code;   // esc()를 거친 글자만 들어 있다
+    $('exTag').hidden = !isSample;
+    save();
+  }
+  function save(){
+    try{ localStorage.setItem('letter-draft', JSON.stringify({ data:read(), state, isSample, o:{ fold:$('oFold').checked, heart:$('oHeart').checked, stats:$('oStats').checked, bgm:$('oBgm').checked, webfont:$('oFont').checked } })); }catch(e){}
+  }
+  function load(){
+    try{
+      const s = JSON.parse(localStorage.getItem('letter-draft') || 'null');
+      if (s && s.data){
+        fill(s.data); Object.assign(state, s.state || {}); isSample = !!s.isSample;
+        if (s.o) Object.keys(s.o).forEach(k => { const id = 'o' + k[0].toUpperCase() + k.slice(1); if ($(id)) $(id).checked = !!s.o[k]; });
+        return true;
+      }
+    }catch(e){}
+    return false;
+  }
+
+  function renderSwatches(){
+    const box = $('swatches'); box.replaceChildren();
+    PALETTES.forEach(p => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'sw'; b.setAttribute('aria-pressed', String(state.palette === p.id));
+      const chips = document.createElement('div'); chips.className = 'chips';
+      [p.paper, p.tint, p.accent, p.ink].forEach(c => { const i = document.createElement('i'); i.style.background = c; chips.appendChild(i); });
+      const s = document.createElement('span'); s.textContent = p.name;
+      b.append(chips, s);
+      b.addEventListener('click', () => { state.palette = p.id; renderSwatches(); update(); });
+      box.appendChild(b);
+    });
+  }
+  const STYLES = [
+    { id:'letter', name:'편지', desc:'말풍선 대사, 날짜 우표, P.S. 속마음' },
+    { id:'log',    name:'항해일지', desc:'함선 장부, 목적지 항로, 상태 보고' },
+    { id:'score',  name:'악보', desc:'오선과 크레센도, 악장, Coda' },
+    { id:'vow',    name:'서약서', desc:'겹테두리, 두 사람의 서명과 인장' }
+  ];
+  function renderStyles(){
+    const box = $('styles'); box.replaceChildren();
+    STYLES.forEach(st => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'st'; b.setAttribute('aria-pressed', String(state.style === st.id));
+      const n = document.createElement('b'); n.textContent = st.name;
+      const d = document.createElement('span'); d.textContent = st.desc;
+      b.append(n, d);
+      b.addEventListener('click', () => { state.style = st.id; applyState(); update(); });
+      box.appendChild(b);
+    });
+    document.body.classList.toggle('is-log', state.style === 'log');
+  }
+  function setSeg(aId, bId, aOn){ $(aId).setAttribute('aria-pressed', String(aOn)); $(bId).setAttribute('aria-pressed', String(!aOn)); }
+  function applyState(){
+    setSeg('fontSerif', 'fontSans', state.font !== 'sans');
+    setSeg('bgLight', 'bgDark', state.bg !== 'dark');
+    $('stage').className = 'stage ' + (state.bg === 'dark' ? 'dark' : 'light');
+    renderSwatches();
+    renderStyles();
+  }
+
+  /* ---------- 복사 ---------- */
+  let statusTimer;
+  function say(msg){ $('status').textContent = msg; clearTimeout(statusTimer); statusTimer = setTimeout(() => $('status').textContent = '', 3200); }
+  async function copyText(text, okMsg){
+    if (!text){ say('복사할 내용이 없어요. 먼저 AI 답변을 붙여넣으세요.'); return; }
+    try{ await navigator.clipboard.writeText(text); say(okMsg); return; }catch(e){}
+    const ta = $('out'); const prev = ta.value;
+    ta.value = text; ta.focus(); ta.select();
+    let ok = false; try{ ok = document.execCommand('copy'); }catch(e){}
+    if (prev !== text && ok){ ta.value = prev; }
+    say(ok ? okMsg : '자동 복사가 막혔어요. 코드 칸이 선택돼 있으니 직접 복사해 주세요.');
+  }
+
+  /* ---------- 연결 ---------- */
+  document.addEventListener('input', ev => {
+    if (ev.target.closest('.panel')){ if (ev.target.id !== 'out') isSample = false; update(); }
+  });
+  document.addEventListener('change', ev => { if (ev.target.type === 'checkbox') update(); });
+  $('addTurn').addEventListener('click', () => { turnBlock(null, true); update(); });
+  $('fontSerif').addEventListener('click', () => { state.font = 'serif'; applyState(); update(); });
+  $('fontSans').addEventListener('click', () => { state.font = 'sans'; applyState(); update(); });
+  $('bgLight').addEventListener('click', () => { state.bg = 'light'; applyState(); save(); });
+  $('bgDark').addEventListener('click', () => { state.bg = 'dark'; applyState(); save(); });
+  $('copyBtn').addEventListener('click', () => copyText($('out').value, '복사했어요. 게시판 HTML 모드에 붙여넣으세요.'));
+  $('blankBtn').addEventListener('click', () => copyText(build(BLANK, Object.assign(opts(), { me:BLANK.me })), '빈 서식을 복사했어요. ‘여기에 …’ 자리만 바꿔 쓰세요.'));
+  $('out').addEventListener('focus', ev => ev.target.select());
+
+  /* ---------- 이미지로 만들기 ----------
+     이미지에서는 접기가 의미가 없어서 내 메시지를 펼친 채로 그린다. */
+  $('imgBtn').addEventListener('click', async () => {
+    const data = read();
+    if (!data.turns.some(t => t.reply.trim() || t.user.trim())){ say('먼저 AI 답변을 붙여넣으세요.'); return; }
+    if (typeof html2canvas !== 'function'){ say('이미지 도구를 불러오지 못했어요. 새로고침한 뒤 다시 눌러 주세요.'); return; }
+    const btn = $('imgBtn'); btn.disabled = true; btn.textContent = '그리는 중…';
+    const box = document.createElement('div'); box.className = 'render-box';
+    box.innerHTML = build(data, Object.assign(opts(), { fold:false, webfont:false }));
+    document.body.appendChild(box);
+    try{
+      try{ await document.fonts.ready; }catch(e){}
+      const h = box.offsetHeight || 1000;
+      const scale = Math.max(1, Math.min(2, 15000 / h, Math.sqrt(16000000 / (640 * h))));
+      const canvas = await html2canvas(box, { scale, backgroundColor:null, logging:false });
+      $('imgPng').src = canvas.toDataURL('image/png');
+      $('imgOut').hidden = false;
+      $('imgHint').textContent = '컴퓨터에서는 이미지를 오른쪽 클릭해 ‘이미지를 다른 이름으로 저장’을, 휴대폰에서는 이미지를 길게 눌러 저장하세요. 그다음 게시판에 사진으로 올리면 돼요.'
+        + (h > 3000 ? ' 장면이 길어서 세로로 아주 긴 이미지가 됐어요. 게시판이 긴 사진을 줄여 버리면 턴을 나눠서 여러 장으로 만들어 보세요.' : '');
+      $('imgOut').scrollIntoView({ block:'nearest' });
+      say('이미지를 만들었어요.');
+    }catch(e){
+      say('이미지를 만들지 못했어요. 다시 한 번 눌러 주세요.');
+    }finally{
+      box.remove(); btn.disabled = false; btn.textContent = '이미지로 만들기';
+    }
+  });
+  $('imgClose').addEventListener('click', () => { $('imgOut').hidden = true; });
+  $('sampleBtn').addEventListener('click', () => { fill(SAMPLE); isSample = true; update(); });
+  $('clearBtn').addEventListener('click', () => { fill({ turns:[] }); isSample = false; update(); $('fEyebrow').focus(); });
+
+  if (!load()) fill(SAMPLE);
+  applyState();
+  update();
+})();
+</script>
+
+</body>
+</html>

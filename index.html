@@ -1,0 +1,2050 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>발키리 항해일지</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Nanum+Pen+Script&display=swap" rel="stylesheet">
+<style>
+  /* ================================================================
+     밤벚꽃 배경에 맞춘 색. 배경을 바꾸면 이 블록만 고치면 돼요.
+     ================================================================ */
+  :root{
+    --text:    #f6eef2;
+    --muted:   rgba(246,238,242,.66);
+    --faint:   rgba(246,238,242,.42);
+    --line:    rgba(255,255,255,.18);
+    --glass:   rgba(20,14,24,.58);
+    --glass-2: rgba(255,255,255,.07);
+    --accent:  var(--lope-accent, #e9c46a);
+    --on-accent: #2b2110;
+    --blossom: #f4b8c9;
+    --warn:    #ff8fa3;
+    --sheet:   #1d1622;
+    --serif: 'Gowun Batang', 'Noto Serif KR', 'AppleMyungjo', serif;
+    --sans:  'Gowun Dodum', 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif;
+    --hand:  'Nanum Pen Script', 'Gowun Batang', serif;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; min-height:100%; }
+  body{
+    background:#120c14; color:var(--text);
+    font-family:var(--sans); font-size:15px; line-height:1.6;
+    display:flex; flex-direction:column;
+    font-variant-numeric:tabular-nums;
+  }
+  .wrap{
+    flex:1; position:relative; z-index:1;
+    padding:clamp(16px,5vw,40px) clamp(12px,4vw,32px) 48px;
+  }
+  .inner{ max-width:660px; margin:0 auto; }
+  button{ font:inherit; color:inherit; cursor:pointer; }
+  button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus-visible{
+    outline:2px solid var(--accent); outline-offset:2px;
+  }
+  .btn{
+    border:1px solid var(--line); background:var(--glass-2); color:var(--text);
+    padding:7px 14px; border-radius:999px; font-size:.86rem;
+  }
+  .btn:hover{ background:rgba(255,255,255,.14); }
+  .btn:disabled{ opacity:.4; cursor:default; }
+  .btn.primary{ background:var(--accent); border-color:var(--accent); color:var(--on-accent); font-weight:700; }
+  .btn.ghost{ background:transparent; border-color:transparent; padding-left:0; color:var(--muted); }
+  .btn.danger{ color:var(--warn); }
+  [hidden]{ display:none !important; }
+
+  .glass{
+    background:var(--glass);
+    -webkit-backdrop-filter:blur(14px) saturate(120%);
+    backdrop-filter:blur(14px) saturate(120%);
+    border:1px solid var(--line);
+    border-radius:22px;
+    padding:clamp(18px,4.5vw,32px);
+    box-shadow:0 18px 50px rgba(0,0,0,.35);
+  }
+
+  /* ---------- 표지 ---------- */
+  .hero{ margin-bottom:16px; }
+  .kicker{ font-size:.82rem; color:var(--accent); margin:0 0 4px; }
+  .hero h1{
+    font-family:var(--serif); font-weight:700;
+    font-size:clamp(1.8rem,7.5vw,2.6rem); line-height:1.25; margin:0;
+    letter-spacing:-.01em; word-break:keep-all;
+  }
+  .logbook{
+    display:grid; grid-template-columns:repeat(4,minmax(0,1fr));
+    margin:22px 0 0; border-top:1px solid var(--line); border-left:1px solid var(--line);
+  }
+  .logbook > div{ padding:10px 12px; border-right:1px solid var(--line); border-bottom:1px solid var(--line); min-width:0; }
+  .logbook dt{ font-size:.74rem; color:var(--muted); }
+  .logbook dd{ margin:2px 0 0; font-family:var(--serif); font-weight:700; font-size:1rem; overflow-wrap:anywhere; }
+  .logbook .dest{ grid-column:1 / -1; }
+  .logbook .dest dd{ color:var(--blossom); }
+  @media (max-width:520px){ .logbook{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
+  .logbook .wide{ grid-column:1 / -1; }
+  .logbook .guide dd{ color:var(--blossom); }
+  .crew{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+  .crew .mate{
+    display:inline-flex; align-items:baseline; gap:6px; max-width:100%;
+    padding:3px 11px; border-radius:999px; font-size:.86rem;
+    border:1px solid rgba(244,184,201,.35); background:rgba(244,184,201,.08);
+  }
+  .crew .mate b{ font-family:var(--serif); font-weight:700; }
+  .crew .mate span{ color:var(--muted); font-size:.78rem; overflow-wrap:anywhere; }
+  .mate-row{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.6fr) auto; gap:6px; align-items:center; }
+  .mate-row .btn{ padding:5px 10px; font-size:.78rem; }
+  .panel select{
+    width:100%; font:inherit; font-size:.92rem; color:var(--text);
+    background:rgba(255,255,255,.06); border:1px solid var(--line); border-radius:12px; padding:10px 12px;
+  }
+  .panel select option{ background:var(--sheet); color:var(--text); }
+  .panel fieldset{ border:1px solid var(--line); border-radius:14px; padding:12px; margin:0; display:flex; flex-direction:column; gap:8px; }
+  .panel legend{ font-size:.84rem; color:var(--muted); padding:0 6px; }
+
+  .route{ display:flex; align-items:center; gap:10px; margin-top:12px; }
+  .route .port{ width:8px; height:8px; border-radius:50%; background:var(--accent); flex:none; }
+  .route .track{
+    position:relative; flex:1; height:2px;
+    background:repeating-linear-gradient(90deg, var(--line) 0 6px, transparent 6px 11px);
+  }
+  .route .sailed{
+    position:absolute; left:0; top:0; bottom:0; width:var(--pos,0%);
+    background:linear-gradient(90deg, var(--accent), var(--blossom));
+    transition:width 1.4s cubic-bezier(.2,.7,.2,1);
+  }
+  .route .ship{
+    position:absolute; top:50%; left:var(--pos,0%);
+    width:12px; height:12px; margin:-6px 0 0 -6px; border-radius:50%;
+    background:var(--blossom); box-shadow:0 0 0 4px rgba(244,184,201,.2), 0 0 16px var(--blossom);
+    transition:left 1.4s cubic-bezier(.2,.7,.2,1);
+  }
+  .route .inf{ font-family:var(--serif); font-size:1.25rem; line-height:1; color:var(--blossom); flex:none; }
+  .route-cap{ display:flex; justify-content:space-between; font-size:.74rem; color:var(--faint); margin-top:6px; }
+
+  .last-heart{
+    font-family:var(--hand); font-size:1.6rem; line-height:1.35;
+    color:var(--blossom); margin:20px 0 0; word-break:keep-all;
+  }
+  .toolbar{ display:flex; flex-wrap:wrap; gap:8px; margin-top:20px; align-items:center; }
+  .toolbar .size{ color:var(--muted); font-size:.78rem; margin-left:auto; }
+
+  .notice{
+    font-size:.82rem; color:var(--muted); background:var(--glass);
+    -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+    border:1px solid var(--line); border-radius:14px; padding:10px 14px; margin-bottom:16px;
+  }
+
+  /* ---------- 목록 ---------- */
+  .listbar{ display:flex; gap:8px; margin-bottom:12px; }
+  .listbar input{
+    flex:1; min-width:0; font:inherit; font-size:.9rem; color:var(--text);
+    background:var(--glass-2); border:1px solid var(--line); border-radius:999px; padding:7px 14px;
+  }
+  .listbar input::placeholder{ color:var(--muted); }
+  .routes{ display:flex; flex-wrap:wrap; gap:6px; margin:0 0 14px; }
+  .chip{
+    border:1px solid var(--line); background:transparent; color:var(--muted);
+    border-radius:999px; padding:3px 11px; font-size:.8rem;
+  }
+  .chip[aria-pressed="true"]{ border-color:var(--blossom); color:var(--text); background:rgba(244,184,201,.14); }
+  .tag{
+    display:inline-block; font-size:.72rem; color:var(--blossom);
+    border:1px solid rgba(244,184,201,.4); border-radius:999px; padding:0 8px; margin-left:6px;
+    vertical-align:1px;
+  }
+
+  .timeline{ list-style:none; margin:0; padding:0 0 0 20px; position:relative; }
+  .timeline::before{
+    content:""; position:absolute; left:5px; top:14px; bottom:14px; width:0;
+    border-left:1px dashed var(--line);
+  }
+  .timeline li{ position:relative; }
+  .timeline li::before{
+    content:""; position:absolute; left:-20px; top:22px;
+    width:8px; height:8px; transform:rotate(45deg);
+    background:var(--sheet); border:1.5px solid var(--accent);
+  }
+  .timeline li.now::before{ background:var(--blossom); border-color:var(--blossom); box-shadow:0 0 12px var(--blossom); }
+  .item{
+    display:block; width:100%; text-align:left; background:none; border:0;
+    padding:14px 12px; margin:2px 0; border-radius:14px;
+  }
+  .item:hover{ background:var(--glass-2); }
+  .item .meta{ display:block; font-size:.78rem; color:var(--muted); }
+  .item .no{ color:var(--accent); margin-right:8px; }
+  .item .ttl{
+    display:block; font-family:var(--serif); font-weight:700;
+    font-size:1.08rem; line-height:1.45; margin-top:2px; word-break:keep-all;
+  }
+  .item .heart{
+    display:block; font-family:var(--hand); font-size:1.25rem; line-height:1.3;
+    color:var(--blossom); margin-top:4px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .empty{ color:var(--muted); text-align:center; padding:32px 0; }
+
+  /* ---------- 일지 읽기 ---------- */
+  .reader-top{ display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:20px; flex-wrap:wrap; }
+  .reader-top .acts{ display:flex; gap:6px; }
+  .loghead{ border-top:1px solid var(--line); border-bottom:1px solid var(--line); padding:10px 0; display:flex; flex-wrap:wrap; gap:6px 22px; }
+  .loghead .no{ color:var(--accent); font-size:.86rem; width:100%; }
+  .loghead div{ font-size:.86rem; }
+  .loghead span{ color:var(--muted); margin-right:6px; font-size:.78rem; }
+  .scene-title{
+    font-family:var(--serif); font-weight:700; font-size:clamp(1.3rem,5.5vw,1.7rem);
+    line-height:1.4; margin:18px 0 26px; word-break:keep-all;
+  }
+  .mine{ margin:0 0 26px; border-left:2px solid var(--line); padding-left:14px; }
+  .mine summary{ cursor:pointer; color:var(--muted); font-size:.86rem; }
+  .mine .prose{ margin-top:12px; font-size:.95rem; }
+  .mine-open{
+    margin:0 0 28px; padding:16px 18px 2px;
+    background:rgba(244,184,201,.10); border:1px solid rgba(244,184,201,.25);
+    border-radius:16px; font-size:.97rem;
+  }
+  .mine-open .who{ font-family:var(--sans); font-size:.8rem; color:var(--blossom); margin:0 0 8px; }
+  .prose{
+    font-family:var(--serif); font-size:1.03rem; line-height:1.95;
+    word-break:keep-all; overflow-wrap:anywhere;
+  }
+  .prose p{ margin:0 0 1em; }
+  .prose p.say{ border-left:2px solid var(--accent); padding-left:.85em; }
+  .prose em{ font-style:normal; color:var(--muted); }
+
+  /* 함선 상태 보고 */
+  .record{
+    margin:36px 0 0; padding:20px 18px;
+    border:1px solid var(--line); border-radius:18px; background:rgba(0,0,0,.22);
+  }
+  .record h3{ font-size:.8rem; font-weight:400; color:var(--accent); margin:0 0 14px; }
+  .record .heart-label{ font-size:.76rem; color:var(--muted); margin:0; }
+  .record .heart{
+    font-family:var(--hand); font-size:1.6rem; line-height:1.35;
+    color:var(--blossom); margin:2px 0 0; word-break:keep-all;
+  }
+  .stats{ display:grid; gap:14px; margin-top:18px; }
+  .stat .row{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; }
+  .stat .lab{ font-size:.84rem; }
+  .stat .pct{ font-family:var(--serif); font-weight:700; font-size:1.15rem; color:var(--accent); }
+  .stat.warn .pct{ color:var(--warn); }
+  .gauge{ height:4px; border-radius:4px; background:rgba(255,255,255,.1); margin-top:6px; overflow:hidden; }
+  .gauge i{ display:block; height:100%; width:0; background:var(--accent); border-radius:4px; transition:width .9s ease; }
+  .stat.warn .gauge i{ background:var(--warn); }
+  .stat .note{ font-size:.82rem; color:var(--muted); margin-top:5px; word-break:keep-all; overflow-wrap:anywhere; }
+  .stat.plain .lab{ color:var(--muted); font-size:.78rem; }
+  .stat.plain .note{ color:var(--text); font-size:.88rem; margin-top:2px; }
+  .record .extra{ font-size:.86rem; margin:14px 0 0; color:var(--muted); }
+  .bgm{
+    display:inline-flex; gap:8px; align-items:baseline; margin-top:18px;
+    font-size:.84rem; padding:5px 12px; border-radius:999px;
+    background:rgba(0,0,0,.25); border:1px solid var(--line);
+  }
+  .bgm b{ font-weight:400; color:var(--accent); }
+  .scene-nav{ display:flex; justify-content:space-between; gap:8px; margin-top:30px; }
+
+  /* ---------- 편집 시트 ---------- */
+  .sheet{
+    position:fixed; inset:0; z-index:10; background:rgba(0,0,0,.55);
+    display:flex; align-items:flex-end; justify-content:center;
+  }
+  .sheet .panel{
+    background:var(--sheet); color:var(--text);
+    width:100%; max-width:660px; max-height:100%; overflow:auto;
+    border:1px solid var(--line); border-bottom:0;
+    border-radius:20px 20px 0 0; padding:20px clamp(14px,4vw,24px) 24px;
+    display:flex; flex-direction:column; gap:12px;
+  }
+  @media (min-width:700px){ .sheet{ align-items:center; } .sheet .panel{ border-radius:20px; border-bottom:1px solid var(--line); max-height:92%; } }
+  .panel h2{ font-family:var(--serif); font-size:1.15rem; margin:0; }
+  .panel label{ font-size:.84rem; color:var(--muted); display:block; margin-bottom:4px; }
+  .panel textarea, .panel input[type=text]{
+    width:100%; font:inherit; font-size:.92rem; color:var(--text);
+    background:rgba(255,255,255,.06); border:1px solid var(--line); border-radius:12px; padding:10px 12px;
+  }
+  .panel textarea::placeholder, .panel input::placeholder{ color:var(--faint); }
+  .panel textarea{ resize:vertical; line-height:1.6; }
+  .panel .hint{ font-size:.78rem; color:var(--muted); margin:4px 0 0; }
+  .panel .row{ display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap; }
+  .panel .two{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  @media (max-width:480px){ .panel .two{ grid-template-columns:1fr; } }
+  .check, .panel .check{ display:flex; gap:10px; align-items:center; cursor:pointer; margin:0; color:var(--text); }
+  .panel .check input{ width:17px; height:17px; margin:0; flex:none; accent-color:var(--accent); }
+  .check span{ font-size:.88rem; color:var(--text); }
+  .check small{ display:block; color:var(--muted); font-size:.78rem; }
+
+  .toast{
+    position:fixed; left:50%; bottom:20px; transform:translateX(-50%);
+    background:var(--text); color:var(--sheet); padding:8px 16px; border-radius:999px;
+    font-size:.85rem; z-index:20; max-width:90%;
+  }
+
+  /* ---------- 연속 항해 묶음 ---------- */
+  .item .count{ font-family:var(--sans); font-weight:400; font-size:.8rem; color:var(--blossom); margin-left:8px; white-space:nowrap; }
+  .item .chev{ float:right; color:var(--muted); font-size:.8rem; transition:transform .2s; }
+  .item[aria-expanded="true"] .chev{ transform:rotate(180deg); }
+  .timeline .sub{ list-style:none; margin:0 0 8px 12px; padding:0 0 0 12px; border-left:1px solid rgba(244,184,201,.3); }
+  .timeline .sub li::before{ display:none; }
+  .timeline .sub .item{ padding:10px 10px; }
+  .timeline .sub .item .ttl{ font-size:1rem; }
+  .part{ color:var(--blossom); margin-right:6px; }
+  .voyage-line{ width:100%; font-size:.84rem; color:var(--blossom); }
+  .voyage-line span{ color:var(--muted); }
+
+  /* ---------- 턴 ---------- */
+  .turn-sep{ text-align:center; color:var(--faint); margin:30px 0; font-size:.9rem; letter-spacing:.8em; padding-left:.8em; }
+  .situ{
+    font-size:.8rem; color:var(--muted); margin:4px 0 0;
+    border-top:1px dashed var(--line); padding-top:8px; word-break:keep-all;
+  }
+  .situ b{ font-weight:400; color:var(--accent); margin-right:6px; }
+  .turns-multi .record{ margin-top:20px; }
+  .turn{ border:1px solid var(--line); border-radius:14px; padding:12px; display:flex; flex-direction:column; gap:8px; }
+  .turn-head{ display:flex; justify-content:space-between; align-items:center; }
+  .turn-head b{ font-size:.84rem; color:var(--accent); font-weight:400; }
+  .turn-head .btn{ padding:3px 10px; font-size:.78rem; }
+  .turns{ display:flex; flex-direction:column; gap:10px; }
+
+  /* 홈 배경: LOPE 밖에서는 밤벚꽃 배경을 직접 깐다 */
+  .bgfix{
+    position:fixed; inset:0; z-index:0; pointer-events:none;
+    background:
+      radial-gradient(60% 45% at 82% 12%, rgba(199,122,146,.55), transparent 70%),
+      radial-gradient(40% 35% at 12% 78%, rgba(150,80,110,.35), transparent 70%),
+      linear-gradient(180deg, #1a1018, #0e0a10);
+    background-size:cover; background-position:center;
+  }
+  .bgfix.has-img::after{ content:""; position:absolute; inset:0; background:linear-gradient(rgba(10,6,12,.25), rgba(10,6,12,.55)); }
+
+  .readbar{ display:flex; flex-wrap:wrap; gap:8px 14px; align-items:center; justify-content:space-between; margin:0 0 20px; padding:10px 12px; border:1px solid var(--line); border-radius:14px; background:var(--glass-2); }
+  .readbar .lab{ font-size:.78rem; color:var(--muted); margin-right:4px; }
+  .seg{ display:inline-flex; flex-wrap:wrap; gap:4px; align-items:center; }
+  .seg button{ border:1px solid transparent; background:transparent; color:var(--muted); border-radius:999px; padding:3px 11px; font-size:.82rem; }
+  .seg button[aria-pressed="true"]{ border-color:var(--blossom); color:var(--text); background:rgba(244,184,201,.14); }
+  .pals{ display:inline-flex; gap:6px; align-items:center; }
+  .pals button{ width:22px; height:22px; border-radius:50%; border:2px solid transparent; padding:0; }
+  .pals button[aria-pressed="true"]{ border-color:var(--text); }
+  #rFormatted{ margin:0 -4px; }
+  .img-frame{ border:1px solid var(--line); border-radius:12px; padding:10px; background:#fff; max-height:60vh; overflow:auto; }
+  .img-frame img{ display:block; width:100%; height:auto; }
+  .render-box{ position:absolute; left:-10000px; top:0; width:640px; }
+
+  @media (max-width:400px){ .wrap{ padding:14px 10px 40px; } .glass{ border-radius:18px; } }
+  @media (prefers-reduced-motion:reduce){ .route .sailed, .route .ship, .gauge i{ transition:none; } }
+</style>
+</head>
+<body>
+<div class="bgfix" id="bgfix" aria-hidden="true"></div>
+<div class="wrap" id="wrap">
+  <div class="inner">
+
+    <header class="hero glass">
+      <p class="kicker" id="kicker"></p>
+      <h1 id="pageTitle">항해일지</h1>
+      <dl class="logbook">
+        <div><dt>함선</dt><dd id="lbShip"></dd></div>
+        <div><dt>함장</dt><dd id="lbCaptain"></dd></div>
+        <div><dt>출항</dt><dd id="lbSince">-</dd></div>
+        <div><dt>기록</dt><dd id="lbCount">-</dd></div>
+        <div class="wide guide" id="lbGuideBox"><dt>가이드</dt><dd id="lbGuide"></dd></div>
+        <div class="wide" id="lbCrewBox" hidden><dt>선원</dt><dd class="crew" id="lbCrew"></dd></div>
+        <div class="dest">
+          <dt>목적지</dt><dd id="lbDest"></dd>
+          <div class="route" aria-hidden="true">
+            <span class="port"></span>
+            <span class="track" id="track"><span class="sailed"></span><span class="ship"></span></span>
+            <span class="inf">∞</span>
+          </div>
+          <div class="route-cap"><span>출항</span><span id="routeCap">남은 거리 ∞</span></div>
+        </div>
+      </dl>
+      <p class="last-heart" id="lastHeart" hidden></p>
+      <div class="toolbar" id="toolbar" hidden>
+        <button class="btn primary" id="addBtn" type="button">일지 쓰기</button>
+        <button class="btn" id="routeCfgBtn" type="button">항로 설정</button>
+        <button class="btn" id="renameBtn" type="button">제목 바꾸기</button>
+        <button class="btn" id="exportBtn" type="button">파일로 백업</button>
+        <button class="btn" id="txtBtn" type="button">전체 txt 백업</button>
+        <button class="btn" id="importBtn" type="button">백업 불러오기</button>
+        <input type="file" id="importFile" accept=".json,application/json" hidden>
+        <span class="size" id="size"></span>
+      </div>
+    </header>
+
+    <div class="notice" id="notice" hidden></div>
+
+    <section id="listView" class="glass">
+      <div class="listbar">
+        <input id="search" type="search" placeholder="위치, 내용으로 찾기" aria-label="일지 찾기">
+        <button class="btn" id="orderBtn" type="button">최근 순</button>
+      </div>
+      <div class="routes" id="routes" hidden></div>
+      <ol class="timeline" id="list"></ol>
+      <p class="empty" id="empty" hidden></p>
+    </section>
+
+    <section id="readerView" class="glass" hidden>
+      <div class="reader-top">
+        <button class="btn ghost" id="backBtn" type="button">← 항해일지 목록</button>
+        <div class="acts">
+          <button class="btn" id="linkBtn" type="button">링크 복사</button>
+        </div>
+        <div class="acts" id="readerActs" hidden>
+          <button class="btn" id="postBtn" type="button">게시글로</button>
+          <button class="btn" id="contBtn" type="button">이어서 쓰기</button>
+          <button class="btn" id="editBtn" type="button">수정</button>
+          <button class="btn danger" id="delBtn" type="button">삭제</button>
+        </div>
+      </div>
+      <div class="readbar" role="group" aria-label="읽기 서식">
+        <div><span class="lab">서식</span><span class="seg" id="readStyles"></span></div>
+        <div class="pals" id="readPals" aria-label="편지지 색"></div>
+      </div>
+      <div id="rClassic">
+        <div class="loghead" id="rHead"></div>
+        <h2 class="scene-title" id="rTitle"></h2>
+        <div id="rTurns"></div>
+      </div>
+      <div id="rFormatted" hidden></div>
+      <nav class="scene-nav">
+        <button class="btn" id="prevBtn" type="button">이전 일지</button>
+        <button class="btn" id="nextBtn" type="button">다음 일지</button>
+      </nav>
+    </section>
+
+  </div>
+</div>
+
+<div class="sheet" id="sheet" hidden>
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <h2 id="sheetTitle">새 항해일지</h2>
+    <p class="hint" style="margin:0">*별표* 줄은 서술로, 맨 아래 --- 뒤의 [ ] 줄은 상황 기록과 함선 상태 보고로, *곡명 - 가수* 줄은 BGM으로 정리돼요. 이야기가 이어지면 ‘턴 추가’로 한 편 안에 계속 붙여 쓸 수 있어요.</p>
+    <div class="turns" id="turns"></div>
+    <div><button class="btn" id="addTurnBtn" type="button">턴 추가</button></div>
+    <div class="two">
+      <div>
+        <label for="fVoyage">연속 항해 (선택)</label>
+        <input id="fVoyage" type="text" list="voyageList" placeholder="같은 이름끼리 묶여요">
+        <datalist id="voyageList"></datalist>
+      </div>
+      <div>
+        <label for="fRoute">항로 (선택)</label>
+        <input id="fRoute" type="text" list="routeList" placeholder="예: 본편, 구미호 AU">
+        <datalist id="routeList"></datalist>
+      </div>
+    </div>
+    <div>
+      <label for="fTitle">제목 (선택)</label>
+      <input id="fTitle" type="text" placeholder="비우면 상황 요약을 제목으로 써요">
+    </div>
+    <div class="row">
+      <button class="btn" id="cancelBtn" type="button">취소</button>
+      <button class="btn primary" id="saveBtn" type="button">기록하기</button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet" id="postSheet" hidden>
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="postTitle">
+    <h2 id="postTitle">게시글로 옮기기</h2>
+    <p class="hint" style="margin:0" id="postStyleHint"></p>
+    <p class="hint" style="margin:0">게시판 글쓰기에서 ‘HTML’이나 ‘소스’ 모드로 바꾼 뒤, 아래 코드를 그대로 붙여넣으세요. 꾸밈이 전부 코드 안에 들어 있어서 게시판 배경이 밝아도 그대로 보여요.</p>
+    <label class="check" id="postWholeWrap" for="postWhole" hidden>
+      <input type="checkbox" id="postWhole">
+      <span id="postWholeLabel"></span>
+    </label>
+    <div>
+      <label for="postCode">게시글 코드</label>
+      <textarea id="postCode" rows="6" readonly style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.78rem;"></textarea>
+    </div>
+    <div class="row" style="justify-content:flex-start">
+      <button class="btn primary" id="postCopy" type="button">코드 복사</button>
+      <button class="btn" id="postImg" type="button">이미지로 만들기</button>
+      <button class="btn" id="postDl" type="button">파일로 받기</button>
+    </div>
+    <div>
+      <label>미리보기 (밝은 게시판에 올렸을 때)</label>
+      <div id="postPreview" style="background:#f4f2f5;border-radius:16px;padding:14px 10px;"></div>
+    </div>
+    <div id="postImgOut" hidden>
+      <label>이미지 (오른쪽 클릭이나 길게 눌러 저장)</label>
+      <div class="img-frame"><img id="postImgPng" alt="게시글 이미지"></div>
+    </div>
+    <div class="row">
+      <button class="btn" id="postClose" type="button">닫기</button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet" id="cfgSheet" hidden>
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="cfgTitle">
+    <h2 id="cfgTitle">항로 설정</h2>
+    <p class="hint" style="margin:0">항로마다 표지에 보일 가이드, 목적지, 선원을 정해요. 비워둔 칸은 기본값을 써요. 출항일과 기록 편수는 자동으로 계산돼요.</p>
+    <div>
+      <label for="cfgRoute">항로</label>
+      <select id="cfgRoute"></select>
+    </div>
+    <div id="cfgNewWrap" hidden>
+      <label for="cfgNew">새 항로 이름</label>
+      <input id="cfgNew" type="text" placeholder="일지의 ‘항로’ 칸에 적는 이름과 똑같이">
+    </div>
+    <div class="two">
+      <div>
+        <label for="cfgGuide">가이드</label>
+        <input id="cfgGuide" type="text" placeholder="예: 희영 (구미호)">
+      </div>
+      <div>
+        <label for="cfgKicker">위쪽 작은 글씨</label>
+        <input id="cfgKicker" type="text" placeholder="비우면 항로 이름">
+      </div>
+    </div>
+    <div>
+      <label for="cfgDest">목적지</label>
+      <input id="cfgDest" type="text" placeholder="비우면 기본 목적지">
+    </div>
+    <fieldset>
+      <legend>선원</legend>
+      <div id="cfgCrew" style="display:flex;flex-direction:column;gap:6px"></div>
+      <div><button class="btn" id="cfgAddMate" type="button">선원 추가</button></div>
+    </fieldset>
+    <div class="row">
+      <button class="btn" id="cfgCancel" type="button">취소</button>
+      <button class="btn primary" id="cfgSave" type="button">저장</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+(function(){
+  /* ================================================================
+     홈(GitHub Pages)용 항해일지.
+     - 기록은 같은 저장소의 data.json에서 읽어와요.
+     - 주소 끝에 #edit 를 붙이면 편집 도구가 나와요. 실제로 바꾸는 건 data.json을 받아 저장소에 올릴 때예요.
+     - ?route=항로이름 으로 그 항로만, ?log=일지아이디 로 그 일지를 바로 열 수 있어요.
+     ================================================================ */
+  const DATA_URL = 'data.json';   // 이 파일과 같은 저장소에 둔 data.json. gist를 계속 쓰려면 gist raw 주소를 넣어도 돼요.
+
+  /* 표지에 들어가는 글자. 자유롭게 바꾸세요. */
+  const LOG = {
+    series:      '크레센도',
+    ship:        '발키리',
+    captain:     '재훈',
+    guide:       '희영',
+    destination: '영원의 너머, 두 사람만의 우주',
+    me:          '희영',       // 서식(악보, 서약서)에 쓰이는 내 캐릭터
+    partner:     '재훈',       // 상대 캐릭터
+    background:  '',           // 배경 이미지. 저장소에 bg.jpg를 올렸다면 'bg.jpg'
+    readStyle:   'classic'     // 처음 보여줄 서식: classic, letter, log, score, vow
+  };
+
+  const L = window.LOPE_HTML_PAGE || {};
+  const inLope = !!window.LOPE_HTML_PAGE;
+  const useRemote = DATA_URL.trim() !== '';
+  const isOwner = inLope && L.admin === true;
+  const persistent = isOwner && !useRemote;
+  const editHash = () => /(^|[#&])edit(\b|$)/.test(location.hash);
+  let canEdit = isOwner || (!inLope && editHash());
+  let previewFallback = false;
+  let loadState = useRemote ? 'loading' : 'ready';
+  let loadError = '';
+  const $ = id => document.getElementById(id);
+  const DEFAULT_TITLE = '항해일지';
+
+  /* ---------- 미리보기용 예시 ---------- */
+  const SAMPLES = [
+    { route:'구미호 AU', voyage:'까치집 사태', turns:[{ user:`*새벽 공기에 부스스 눈을 뜬다. 머리 위로 뭔가 삐죽 솟아 있는 게 느껴진다.*
+
+…일출 보러 가자고 깨운 거 맞아요?`, reply:`*아까 제일 높이 솟아 있던 자리였다. 이제는 얌전히 누워 있는 그 정수리에, 아직 바람 냄새가 조금 남아 있었다.*
+
+맞아. 일출.
+
+*희영이 눈을 가늘게 떴다. 잠이 반쯤 걷힌 금빛 눈동자가 나를 위아래로 훑었다.*
+
+해가 아직 안 떴는데요.
+
+뜨기 직전이 제일 예뻐.
+
+---
+[진실된 속마음: 까치집이든 은하수든, 네가 아침에 처음 눈 뜨고 찾는 게 나라는 게 제일 좋다.]
+[2032-05-23 (일) 05:48 / 발키리 갑판 / 기상 직후 까치집 사태 수습, 비공개 보존 조건으로 사진 결재 획득]
+[머스탱 가이딩 필요 수치: 0% (손등 엄지 도장 안착) / 폭주 확률: 0% (단, 잠금화면 유지 확률 100%)]
+
+*Banana Pancakes - Jack Johnson*` }] },
+    { route:'구미호 AU', voyage:'까치집 사태', turns:[{ user:`*단말기를 꼭 쥔 채 따라 걷는다.* 그 사진, 진짜 아무한테도 안 보여줄 거죠?`, reply:`*엄지 도장이 찍힌 손등을 들어 보였다.*
+
+결재 났잖아.
+
+---
+[진실된 속마음: 보여줄 생각은 없다. 자랑하고 싶은 거랑은 별개로.]
+[2032-05-23 (일) 06:20 / 발키리 식당 / 아침 식사 중 사진 보안 재확인]
+[머스탱 가이딩 필요 수치: 3% (괜히 찔림)]` }] },
+    { route:'본편', title:'폭풍 전선 우회 (예시)', turns:[
+      { user:`*브리핑 자료를 넘기다 말고 고개를 든다.* 오늘 항로, 또 바뀌었어요?`, reply:`*지도 위에 손가락을 짚었다.*
+
+폭풍 전선. 돌아간다.
+
+*그녀가 미간을 좁혔다. 돌아가면 하루가 늦어진다는 뜻이었다.*
+
+---
+[2032-06-02 (수) 21:10 / 발키리 함교 / 기상 악화로 항로 변경 브리핑]` },
+      { user:`하루 늦어지면, 그만큼 같이 있는 거네요.`, showUser:true, reply:`*대답 대신 함교 조명을 한 단계 낮췄다.*
+
+…계산은 네가 해.
+
+---
+[2032-06-02 (수) 21:24 / 발키리 함교 / 브리핑 종료, 야간 당직 교대 보류]` }
+    ] }
+  ];
+
+  /* ---------- 데이터 ---------- */
+  function newId(){
+    try{ return crypto.randomUUID(); }catch(e){ return 'e' + Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+  }
+  const cleanTurn = t => ({ user:String(t.user || ''), showUser:t.showUser === true, reply:String(t.reply || '') });
+  function cleanEntry(x){
+    let turns = [];
+    if (Array.isArray(x.turns)) turns = x.turns.filter(t => t && (typeof t.reply === 'string' || typeof t.user === 'string')).map(cleanTurn);
+    else if (typeof x.reply === 'string') turns = [cleanTurn(x)];   // 예전 형식
+    return { id:String(x.id || newId()), title:String(x.title || ''), route:String(x.route || '').trim(),
+             voyage:String(x.voyage || '').trim(), turns, added:Number(x.added) || 0 };
+  }
+  const cleanAll = arr => (Array.isArray(arr) ? arr : []).filter(x => x && typeof x === 'object').map(cleanEntry).filter(e => e.turns.length);
+
+  let foreignText = false;
+  function loadStore(){
+    const raw = L.richText;
+    if (raw == null || raw === '') return null;
+    try{
+      const o = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      if (o && Array.isArray(o.entries)) return { title:o.title, entries:cleanAll(o.entries), routes:cleanRoutes(o.routes) };
+    }catch(e){}
+    foreignText = true;
+    return null;
+  }
+  function cleanRoutes(r){
+    const out = {};
+    if (!r || typeof r !== 'object') return out;
+    Object.keys(r).forEach(k => {
+      const v = r[k]; const name = String(k).trim();
+      if (!name || !v || typeof v !== 'object') return;
+      out[name] = {
+        guide:String(v.guide || '').trim(), kicker:String(v.kicker || '').trim(),
+        destination:String(v.destination || '').trim(),
+        crew:(Array.isArray(v.crew) ? v.crew : []).map(m => ({ name:String((m && m.name) || '').trim(), note:String((m && m.note) || '').trim() })).filter(m => m.name)
+      };
+    });
+    return out;
+  }
+  const SAMPLE_ROUTES = {
+    '구미호 AU': { guide:'희영 (구미호)', kicker:'', destination:'',
+                   crew:[{ name:'도훈', note:'뱃속에 있는 아기' }, { name:'서 윤', note:'몽화묘' }] }
+  };
+  let store;
+  if (useRemote) store = { title:DEFAULT_TITLE, entries:[], routes:{} };
+  else store = loadStore() || (inLope
+    ? { title:DEFAULT_TITLE, entries:[] }
+    : { title:DEFAULT_TITLE, entries:SAMPLES.map((x, i) => cleanEntry(Object.assign({ added:Date.now() + i }, x))), routes:cleanRoutes(SAMPLE_ROUTES) });
+  if (!store.routes) store.routes = {};
+  if (typeof store.title !== 'string' || !store.title) store.title = DEFAULT_TITLE;
+
+  async function loadRemote(){
+    try{
+      const res = await fetch(DATA_URL.trim(), { cache:'no-store' });
+      if (!res.ok) throw new Error('응답 ' + res.status);
+      const o = JSON.parse(await res.text());
+      if (!o || !Array.isArray(o.entries)) throw new Error('항해일지 형식이 아니에요');
+      store = { title:(typeof o.title === 'string' && o.title) ? o.title : DEFAULT_TITLE, entries:cleanAll(o.entries), routes:cleanRoutes(o.routes) };
+      loadState = 'ready';
+    }catch(e){
+      if (location.protocol === 'file:'){
+        // 파일을 그냥 열면 브라우저가 data.json을 못 읽어서 예시로 보여준다
+        store = { title:DEFAULT_TITLE, entries:SAMPLES.map((x, i) => cleanEntry(Object.assign({ added:Date.now() + i }, x))), routes:cleanRoutes(SAMPLE_ROUTES) };
+        loadState = 'ready'; previewFallback = true;
+      } else {
+        loadState = 'error';
+        loadError = (e && e.message) ? e.message : String(e);
+      }
+    }
+    applyEditMode();
+    applyUrl();
+  }
+
+  /* ---------- 파싱 ---------- */
+  const isBracket = s => /^\[.*\]$/.test(s);
+  const isStarLine = s => /^\*[^*]+\*$/.test(s);
+  const isBgm = s => isStarLine(s) && / [-–—] /.test(s);
+
+  function splitTop(s){
+    const out = []; let depth = 0, cur = '';
+    for (let i = 0; i < s.length; i++){
+      const ch = s[i];
+      if ('([（'.includes(ch)) depth++;
+      else if (')]）'.includes(ch)) depth = Math.max(0, depth - 1);
+      if (depth === 0 && s.startsWith(' / ', i)){ out.push(cur); cur = ''; i += 2; continue; }
+      cur += ch;
+    }
+    out.push(cur);
+    return out.map(x => x.trim()).filter(Boolean);
+  }
+  function labelSplit(part){
+    const c = part.indexOf(':');
+    if (c > 0 && c < 30) return { label:part.slice(0, c).trim(), value:part.slice(c + 1).trim() };
+    return null;
+  }
+
+  function parse(reply){
+    const lines = String(reply || '').replace(/\r/g,'').split('\n');
+    let cut = -1;
+    for (let i = lines.length - 1; i >= 0; i--){
+      if (/^\s*-{3,}\s*$/.test(lines[i])){ cut = i; break; }
+    }
+    let bodyLines, metaLines;
+    if (cut >= 0){
+      bodyLines = lines.slice(0, cut); metaLines = lines.slice(cut + 1);
+    } else {
+      let i = lines.length;
+      while (i > 0){
+        const t = lines[i-1].trim();
+        if (t === '' || isBracket(t) || isBgm(t)) i--; else break;
+      }
+      bodyLines = lines.slice(0, i); metaLines = lines.slice(i);
+    }
+    const meta = { heart:'', heartLabel:'', when:'', place:'', summary:'', stats:[], bgm:'', extra:[] };
+    metaLines.forEach(l => {
+      const t = l.trim();
+      if (!t) return;
+      if (isBracket(t)){
+        const inner = t.slice(1, -1).trim();
+        if (!meta.when && /\d{4}[-.\/]\d{1,2}[-.\/]\d{1,2}/.test(inner)){
+          const parts = inner.split(/\s+\/\s+/);
+          meta.when = parts[0] || '';
+          meta.place = parts[1] || '';
+          meta.summary = parts.slice(2).join(' / ');
+          return;
+        }
+        const whole = labelSplit(inner);
+        if (whole && !meta.heart && /속마음/.test(whole.label)){
+          meta.heart = whole.value; meta.heartLabel = whole.label; return;
+        }
+        const parts = splitTop(inner);
+        const pieces = parts.map(labelSplit);
+        if (parts.length > 1 && pieces.every(Boolean)) pieces.forEach(p => meta.stats.push(p));
+        else meta.stats.push(whole || { label:'', value:inner });
+      } else if (isBgm(t) && !meta.bgm){
+        meta.bgm = t.slice(1, -1).trim();
+      } else meta.extra.push(t);
+    });
+    return { body: bodyLines.join('\n'), meta };
+  }
+  const pcache = new Map();
+  function P(reply){
+    let r = pcache.get(reply);
+    if (!r){ r = parse(reply); pcache.set(reply, r); }
+    return r;
+  }
+
+  // 일지 한 편(여러 턴)의 요약 정보
+  function info(e){
+    const metas = e.turns.map(t => P(t.reply).meta);
+    const dated = metas.filter(m => m.when);
+    const first = dated[0] || metas[0] || {};
+    const last = dated[dated.length - 1];
+    let heart = '';
+    for (let i = metas.length - 1; i >= 0; i--) if (metas[i].heart){ heart = metas[i].heart; break; }
+    return {
+      when: first.when || '', place: first.place || '',
+      lastWhen: (last && last !== first) ? last.when : '',
+      summary: (metas.find(m => m.summary) || {}).summary || '',
+      heart, metas
+    };
+  }
+  function sortKey(e){
+    const m = info(e).when.match(/(\d{4})[-.\/](\d{1,2})[-.\/](\d{1,2})(?:\D*?(\d{1,2}):(\d{2}))?/);
+    if (m){
+      const p = n => String(n || 0).padStart(2, '0');
+      return m[1] + p(m[2]) + p(m[3]) + p(m[4]) + p(m[5]) + '|' + String(e.added).padStart(15, '0');
+    }
+    return '9' + String(e.added).padStart(15, '0');
+  }
+  function titleOf(e, inf){
+    if (e.title) return e.title;
+    if (inf.summary) return inf.summary;
+    for (const t of e.turns){
+      const first = P(t.reply).body.split('\n').map(s => s.trim()).find(s => s && !isStarLine(s));
+      if (first) return first.length > 40 ? first.slice(0, 40) + '…' : first;
+    }
+    return '제목 없는 일지';
+  }
+  function hayOf(e, inf){
+    const parts = [titleOf(e, inf), e.route, e.voyage, inf.place, inf.when, inf.heart];
+    e.turns.forEach(t => parts.push(P(t.reply).body, t.user));
+    return parts.join(' ').toLowerCase();
+  }
+  const dateOnly = s => { const m = String(s).match(/\d{4}[-.\/]\d{1,2}[-.\/]\d{1,2}/); return m ? m[0].replace(/[-\/]/g, '.') : ''; };
+  const pad3 = n => 'No.' + String(n).padStart(3, '0');
+
+  /* ---------- 그리기 도우미 (전부 textContent로) ---------- */
+  function el(tag, cls, text){
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+  function renderProse(text, box){
+    box.replaceChildren();
+    String(text || '').replace(/\r/g,'').split('\n').forEach(line => {
+      const t = line.trim();
+      if (!t) return;
+      const p = el('p');
+      if (isStarLine(t)){
+        p.textContent = t.slice(1, -1).trim();
+      } else {
+        p.className = 'say';
+        t.split(/(\*[^*]+\*)/).forEach(part => {
+          if (!part) return;
+          if (/^\*[^*]+\*$/.test(part)) p.appendChild(el('em', null, part.slice(1, -1)));
+          else p.appendChild(document.createTextNode(part));
+        });
+      }
+      box.appendChild(p);
+    });
+    return box;
+  }
+
+  /* ---------- 화면 상태 ---------- */
+  let newestFirst = false;
+  let currentId = null;
+  let routeFilter = null;     // null = 전체, '' = 항로 미정
+  const openGroups = new Set();
+
+  function ordered(){
+    return store.entries.slice().sort((a, b) => sortKey(a) < sortKey(b) ? -1 : 1);
+  }
+  // 항로를 고르면 그 항로 안에서 No.001부터 센다
+  const scoped = () => routeFilter === null ? ordered() : ordered().filter(e => e.route === routeFilter);
+  function numbers(){
+    const map = new Map();
+    scoped().forEach((e, i) => map.set(e.id, i + 1));
+    ordered().forEach((e, i) => { if (!map.has(e.id)) map.set(e.id, i + 1); });
+    return map;
+  }
+  function routeCfg(){
+    if (routeFilter === null){
+      const seen = new Set(), crew = [];
+      Object.values(store.routes).forEach(r => r.crew.forEach(m => { if (!seen.has(m.name)){ seen.add(m.name); crew.push(m); } }));
+      return { kicker:LOG.series, guide:LOG.guide, destination:LOG.destination, crew };
+    }
+    const r = store.routes[routeFilter] || {};
+    return {
+      kicker: r.kicker || routeFilter || LOG.series,
+      guide: r.guide || LOG.guide,
+      destination: r.destination || LOG.destination,
+      crew: r.crew || []
+    };
+  }
+
+  function renderHero(){
+    const cfg = routeCfg();
+    $('kicker').textContent = cfg.kicker || '';
+    $('kicker').hidden = !cfg.kicker;
+    $('pageTitle').textContent = store.title;
+    $('lbShip').textContent = LOG.ship || '-';
+    $('lbCaptain').textContent = LOG.captain || '-';
+    $('lbDest').textContent = cfg.destination || '-';
+    $('lbGuide').textContent = cfg.guide || '-';
+    $('lbGuideBox').hidden = !cfg.guide;
+    const crewBox = $('lbCrew'); crewBox.replaceChildren();
+    cfg.crew.forEach(m => {
+      const c = el('span', 'mate'); c.appendChild(el('b', null, m.name));
+      if (m.note) c.appendChild(el('span', null, m.note));
+      crewBox.appendChild(c);
+    });
+    $('lbCrewBox').hidden = !cfg.crew.length;
+
+    const arr = scoped();
+    const n = arr.length;
+    $('lbCount').textContent = loadState === 'loading' ? '불러오는 중' : n + '편';
+    let since = '';
+    for (const e of arr){ since = dateOnly(info(e).when); if (since) break; }
+    $('lbSince').textContent = since || '-';
+
+    // 일지가 쌓일수록 ∞에 다가가지만 닿지는 않는다
+    const pos = n ? 94 * (1 - 1 / (1 + n / 10)) : 0;
+    $('track').style.setProperty('--pos', pos.toFixed(2) + '%');
+    $('routeCap').textContent = n ? '현재 ' + pad3(n) + ', 남은 거리 ∞' : '남은 거리 ∞';
+
+    let last = '';
+    for (let i = arr.length - 1; i >= 0; i--){ const h = info(arr[i]).heart; if (h){ last = h; break; } }
+    $('lastHeart').hidden = !last;
+    $('lastHeart').textContent = last;
+    if (canEdit){
+      const bytes = new Blob([JSON.stringify(store)]).size;
+      $('size').textContent = (useRemote ? 'data.json ' : '기록 용량 ') + (bytes / 1024).toFixed(1) + 'KB';
+    }
+  }
+
+  function fillDatalist(id, names){
+    const dl = $(id); dl.replaceChildren();
+    names.forEach(r => { const o = document.createElement('option'); o.value = r; dl.appendChild(o); });
+  }
+  function renderFilters(){
+    const byKo = (a, b) => a.localeCompare(b, 'ko');
+    const names = [...new Set(store.entries.map(e => e.route).filter(Boolean))].sort(byKo);
+    fillDatalist('routeList', names);
+    fillDatalist('voyageList', [...new Set(store.entries.map(e => e.voyage).filter(Boolean))].sort(byKo));
+    const hasNone = store.entries.some(e => !e.route);
+    const box = $('routes');
+    box.replaceChildren();
+    if (!names.length || names.length + (hasNone ? 1 : 0) < 2){ box.hidden = true; routeFilter = null; return; }
+    if (routeFilter !== null && routeFilter !== '' && !names.includes(routeFilter)) routeFilter = null;
+    box.hidden = false;
+    const add = (label, val) => {
+      const b = el('button', 'chip', label);
+      b.type = 'button';
+      b.setAttribute('aria-pressed', String(routeFilter === val));
+      b.addEventListener('click', () => { routeFilter = val; showList(); });
+      box.appendChild(b);
+    };
+    add('전체 항로', null);
+    names.forEach(r => add(r, r));
+    if (hasNone) add('항로 미정', '');
+  }
+
+  function itemLi(e, nums, lastId, partNo){
+    const inf = info(e);
+    const li = el('li');
+    if (e.id === lastId) li.className = 'now';
+    const b = el('button', 'item'); b.type = 'button';
+    const m = el('span', 'meta');
+    m.appendChild(el('span', 'no', pad3(nums.get(e.id))));
+    if (partNo) m.appendChild(el('span', 'part', partNo + '편'));
+    m.appendChild(document.createTextNode([inf.when, inf.place].filter(Boolean).join(', ') || '일시 미상'));
+    if (e.route && !partNo) m.appendChild(el('span', 'tag', e.route));
+    const t = el('span', 'ttl', titleOf(e, inf));
+    if (e.turns.length > 1) t.appendChild(el('span', 'count', e.turns.length + '턴'));
+    b.append(m, t);
+    if (inf.heart) b.appendChild(el('span', 'heart', inf.heart));
+    b.addEventListener('click', () => openReader(e.id));
+    li.appendChild(b);
+    return li;
+  }
+
+  function renderList(){
+    renderFilters();
+    const q = $('search').value.trim().toLowerCase();
+    const nums = numbers();
+    const all = ordered();
+    const lastId = all.length ? all[all.length - 1].id : null;
+    const match = e => (routeFilter === null || e.route === routeFilter) && (!q || hayOf(e, info(e)).includes(q));
+
+    // 연속 항해끼리 묶기 (첫 편 자리에 놓임)
+    const units = [], gmap = new Map();
+    all.forEach(e => {
+      if (e.voyage){
+        let g = gmap.get(e.voyage);
+        if (!g){ g = { type:'g', name:e.voyage, items:[] }; gmap.set(e.voyage, g); units.push(g); }
+        g.items.push(e);
+      } else units.push({ type:'s', e });
+    });
+    if (newestFirst) units.reverse();
+
+    const list = $('list');
+    list.replaceChildren();
+    let shown = 0;
+    units.forEach(u => {
+      if (u.type === 's'){
+        if (!match(u.e)) return;
+        shown++; list.appendChild(itemLi(u.e, nums, lastId)); return;
+      }
+      const hits = u.items.filter(match);
+      if (!hits.length) return;
+      shown += hits.length;
+      const li = el('li', 'group');
+      if (u.items.some(x => x.id === lastId)) li.classList.add('now');
+      const open = openGroups.has(u.name) || !!q;
+      const b = el('button', 'item'); b.type = 'button';
+      b.setAttribute('aria-expanded', String(open));
+      const fN = nums.get(u.items[0].id), lN = nums.get(u.items[u.items.length - 1].id);
+      const fi = info(u.items[0]);
+      const m = el('span', 'meta');
+      m.appendChild(el('span', 'no', fN === lN ? pad3(fN) : pad3(fN) + '–' + String(lN).padStart(3, '0')));
+      m.appendChild(document.createTextNode([fi.when, fi.place].filter(Boolean).join(', ') || '일시 미상'));
+      [...new Set(u.items.map(x => x.route).filter(Boolean))].forEach(r => m.appendChild(el('span', 'tag', r)));
+      m.appendChild(el('span', 'chev', '▾'));
+      const t = el('span', 'ttl', u.name);
+      t.appendChild(el('span', 'count', u.items.length + '편 연속 항해'));
+      b.append(m, t);
+      let heart = '';
+      for (let i = u.items.length - 1; i >= 0; i--){ const h = info(u.items[i]).heart; if (h){ heart = h; break; } }
+      if (heart) b.appendChild(el('span', 'heart', heart));
+      b.addEventListener('click', () => {
+        if (openGroups.has(u.name)) openGroups.delete(u.name); else openGroups.add(u.name);
+        renderList();
+      });
+      li.appendChild(b);
+      if (open){
+        const ol = el('ol', 'sub');
+        hits.forEach(e => ol.appendChild(itemLi(e, nums, null, u.items.indexOf(e) + 1)));
+        li.appendChild(ol);
+      }
+      list.appendChild(li);
+    });
+
+    const empty = $('empty');
+    empty.hidden = shown > 0;
+    if (!shown){
+      empty.textContent =
+        loadState === 'loading' ? '항해일지를 불러오는 중이에요…'
+        : loadState === 'error' ? (canEdit
+            ? '깃허브에서 기록을 불러오지 못했어요 (' + loadError + '). DATA_URL이 raw 주소인지, 파일이 그 자리에 있는지 확인해 주세요.'
+            : '항해일지를 불러오지 못했어요. 잠시 뒤에 다시 열어 주세요.')
+        : (q || routeFilter !== null) ? '조건에 맞는 일지가 없어요. 검색어나 항로를 바꿔 보세요.'
+        : (canEdit ? '‘일지 쓰기’를 눌러 첫 항해를 기록해 보세요.' : '아직 적힌 항해일지가 없어요.');
+    }
+    $('orderBtn').textContent = newestFirst ? '오래된 순' : '최근 순';
+  }
+
+  function showList(){
+    currentId = null;
+    setTimeout(syncUrl, 0);
+    $('readerView').hidden = true;
+    $('listView').hidden = false;
+    renderFilters(); renderHero(); renderList();
+  }
+
+  /* ---------- 일지 읽기 ---------- */
+  function renderStat(s){
+    const box = el('div', 'stat');
+    const m = s.value.match(/^(-?\d+(?:\.\d+)?)\s*%/);
+    if (m){
+      const pct = Math.max(0, Math.min(100, parseFloat(m[1])));
+      if (/폭주|위험|오염|붕괴|과부하/.test(s.label)) box.classList.add('warn');
+      const row = el('div', 'row');
+      row.append(el('span', 'lab', s.label || '수치'), el('span', 'pct', m[1] + '%'));
+      const g = el('div', 'gauge'); const bar = el('i'); g.appendChild(bar);
+      box.append(row, g);
+      requestAnimationFrame(() => requestAnimationFrame(() => { bar.style.width = pct + '%'; }));
+      const note = s.value.slice(m[0].length).trim().replace(/^\(([\s\S]*)\)$/, '$1');
+      if (note) box.appendChild(el('div', 'note', note));
+    } else {
+      box.classList.add('plain');
+      if (s.label) box.appendChild(el('div', 'lab', s.label));
+      box.appendChild(el('div', 'note', s.value));
+    }
+    return box;
+  }
+  function buildReport(meta, rows){
+    if (!(meta.heart || rows.length || meta.extra.length || meta.bgm)) return null;
+    const rec = el('aside', 'record');
+    rec.appendChild(el('h3', null, '함선 상태 보고'));
+    if (meta.heart){
+      rec.appendChild(el('p', 'heart-label', meta.heartLabel || '속마음'));
+      rec.appendChild(el('p', 'heart', meta.heart));
+    }
+    if (rows.length){
+      const st = el('div', 'stats');
+      rows.forEach(s => st.appendChild(renderStat(s)));
+      rec.appendChild(st);
+    }
+    meta.extra.forEach(x => rec.appendChild(el('p', 'extra', x)));
+    if (meta.bgm){
+      const s = el('div', 'bgm');
+      s.append(el('b', null, '♪ 함내 방송'), el('span', null, meta.bgm));
+      rec.appendChild(s);
+    }
+    return rec;
+  }
+  function userBlock(t){
+    if (!t.user || !t.user.trim()) return null;
+    if (t.showUser){
+      const d = el('div', 'mine-open');
+      d.append(el('p', 'who', '내가 쓴 부분'), renderProse(t.user, el('div', 'prose')));
+      return d;
+    }
+    const d = el('details', 'mine');
+    d.append(el('summary', null, '내가 쓴 부분 보기'), renderProse(t.user, el('div', 'prose')));
+    return d;
+  }
+
+  function openReader(id){
+    const e = store.entries.find(x => x.id === id);
+    if (!e){ showList(); return; }
+    currentId = id;
+    const inf = info(e);
+    const nums = numbers();
+    const all = ordered();
+    const vg = e.voyage ? all.filter(x => x.voyage === e.voyage) : null;
+    const vi = vg ? vg.findIndex(x => x.id === id) : -1;
+
+    const head = $('rHead'); head.replaceChildren();
+    const no = el('div', 'no', '항해일지 ' + pad3(nums.get(id)));
+    if (e.route) no.appendChild(el('span', 'tag', e.route));
+    head.appendChild(no);
+    if (vg){
+      const v = el('div', 'voyage-line');
+      v.append(el('span', null, '연속 항해 '), document.createTextNode(e.voyage + ' ' + (vi + 1) + '/' + vg.length + '편'));
+      head.appendChild(v);
+    }
+    const cell = (k, val) => { if (!val) return; const d = el('div'); d.append(el('span', null, k), document.createTextNode(val)); head.appendChild(d); };
+    let until = inf.lastWhen;
+    if (until && dateOnly(until) === dateOnly(inf.when)){ const tm = until.match(/\d{1,2}:\d{2}/); if (tm) until = tm[0]; }
+    cell('일시', inf.when + (until ? ' ~ ' + until : ''));
+    cell('위치', inf.place);
+    if (e.turns.length > 1) cell('분량', e.turns.length + '턴');
+
+    $('rTitle').textContent = titleOf(e, inf);
+
+    const box = $('rTurns');
+    box.replaceChildren();
+    const single = e.turns.length === 1;
+    box.className = single ? '' : 'turns-multi';
+    e.turns.forEach((t, i) => {
+      if (i > 0) box.appendChild(el('div', 'turn-sep', '✧ ✧ ✧'));
+      const u = userBlock(t); if (u) box.appendChild(u);
+      const { body, meta } = P(t.reply);
+      box.appendChild(renderProse(body, el('article', 'prose')));
+      const rows = [];
+      if (single){
+        if (meta.summary && e.title) rows.push({ label:'요약', value:meta.summary });
+      } else if (meta.when || meta.place || meta.summary){
+        const s = el('p', 'situ');
+        const tm = (meta.when.match(/\d{1,2}:\d{2}/) || [''])[0];
+        s.append(el('b', null, '상황'), document.createTextNode([tm || meta.when, meta.place, meta.summary].filter(Boolean).join(', ')));
+        box.appendChild(s);
+      }
+      meta.stats.forEach(s => rows.push(s));
+      const rec = buildReport(meta, rows);
+      if (rec) box.appendChild(rec);
+    });
+
+    // 이전/다음: 연속 항해 안에서 먼저, 끝나면 전체 순서로
+    const gi = all.findIndex(x => x.id === id);
+    const inPrev = vg && vg[vi - 1], inNext = vg && vg[vi + 1];
+    const prev = inPrev || all[gi - 1], next = inNext || all[gi + 1];
+    $('prevBtn').textContent = inPrev ? '이전 편' : '이전 일지';
+    $('nextBtn').textContent = inNext ? '다음 편' : '다음 일지';
+    $('prevBtn').disabled = !prev; $('prevBtn').onclick = () => prev && openReader(prev.id);
+    $('nextBtn').disabled = !next; $('nextBtn').onclick = () => next && openReader(next.id);
+
+    $('readerActs').hidden = !canEdit;
+    $('listView').hidden = true;
+    $('readerView').hidden = false;
+    renderReadBar();
+    renderFormatted(e);
+    syncUrl();
+    window.scrollTo(0, 0);
+  }
+
+  /* ---------- 저장 ---------- */
+  let toastTimer;
+  function toast(msg){
+    const t = $('toast');
+    t.textContent = msg; t.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.hidden = true; }, 2600);
+  }
+  function persist(msg){
+    if (useRemote){
+      toast((msg || '반영했어요') + '. data.json을 받아 깃허브에 올려야 남아요');
+      return true;
+    }
+    if (persistent){
+      if (foreignText && !confirm('이 페이지에 원래 저장돼 있던 텍스트가 항해일지 내용으로 바뀌어요. 계속할까요?')) return false;
+      foreignText = false;
+      try{
+        parent.postMessage({ type:'lope-html-page-save-rich-text', pageId:L.pageId, richText:JSON.stringify(store) }, '*');
+        toast(msg || '저장했어요');
+      }catch(e){ toast('저장하지 못했어요. 파일로 백업해 두세요.'); }
+    } else {
+      toast((msg || '반영했어요') + ' (미리보기라 새로고침하면 사라져요)');
+    }
+    return true;
+  }
+
+  /* ---------- 편집 시트 ---------- */
+  let editingId = null;
+  let lastFocus = null;
+  let turnSeq = 0;
+
+  function renumberTurns(){
+    const blocks = [...$('turns').children];
+    blocks.forEach((d, i) => {
+      d.querySelector('.turn-head b').textContent = '턴 ' + (i + 1);
+      d.querySelector('.turn-head .btn').hidden = blocks.length === 1;
+    });
+  }
+  function addTurnBlock(t, focus){
+    t = t || { user:'', showUser:false, reply:'' };
+    const n = ++turnSeq;
+    const d = el('div', 'turn');
+    const head = el('div', 'turn-head');
+    const rm = el('button', 'btn danger', '이 턴 빼기'); rm.type = 'button';
+    rm.addEventListener('click', () => {
+      const filled = d.querySelector('.tu').value.trim() || d.querySelector('.ta').value.trim();
+      if (filled && !confirm('이 턴의 내용을 지울까요?')) return;
+      d.remove(); renumberTurns();
+    });
+    head.append(el('b'), rm);
+
+    const lu = el('label', null, '내가 보낸 메시지 (선택)'); lu.htmlFor = 'tu' + n;
+    const tu = el('textarea', 'tu'); tu.id = 'tu' + n; tu.rows = 3; tu.placeholder = '비워둬도 괜찮아요'; tu.value = t.user;
+    const ck = el('label', 'check'); ck.htmlFor = 'ts' + n;
+    const cb = el('input', 'ts'); cb.type = 'checkbox'; cb.id = 'ts' + n; cb.checked = !!t.showUser;
+    const sp = el('span', null, '접지 않고 펼쳐서 보여주기');
+    ck.append(cb, sp);
+    const la = el('label', null, 'AI 답변'); la.htmlFor = 'ta' + n;
+    const ta = el('textarea', 'ta'); ta.id = 'ta' + n; ta.rows = 8; ta.placeholder = 'AI가 쓴 답변을 그대로 붙여넣으세요'; ta.value = t.reply;
+
+    const wu = el('div'); wu.append(lu, tu);
+    const wa = el('div'); wa.append(la, ta);
+    d.append(head, wu, ck, wa);
+    $('turns').appendChild(d);
+    renumberTurns();
+    if (focus){ tu.focus(); d.scrollIntoView({ block:'nearest' }); }
+    return d;
+  }
+  function collectTurns(){
+    return [...$('turns').children].map(d => ({
+      user: d.querySelector('.tu').value,
+      showUser: d.querySelector('.ts').checked,
+      reply: d.querySelector('.ta').value
+    })).filter(t => t.user.trim() || t.reply.trim());
+  }
+
+  function openEditor(id, preset){
+    editingId = id || null;
+    const e = id ? store.entries.find(x => x.id === id) : null;
+    preset = preset || {};
+    $('sheetTitle').textContent = e ? '항해일지 고치기' : (preset.voyage ? '연속 항해 이어 쓰기' : '새 항해일지');
+    $('turns').replaceChildren();
+    (e ? e.turns : [null]).forEach(t => addTurnBlock(t));
+    $('fTitle').value = e ? e.title : '';
+    $('fRoute').value = e ? e.route : (preset.route != null ? preset.route : (routeFilter || ''));
+    $('fVoyage').value = e ? e.voyage : (preset.voyage || '');
+    lastFocus = document.activeElement;
+    $('sheet').hidden = false;
+    $('sheet').querySelector('.panel').scrollTop = 0;
+    $('turns').querySelector('.ta').focus();
+  }
+  function closeEditor(){
+    $('sheet').hidden = true;
+    if (lastFocus) lastFocus.focus();
+  }
+  $('addTurnBtn').addEventListener('click', () => addTurnBlock(null, true));
+  $('saveBtn').addEventListener('click', () => {
+    const turns = collectTurns();
+    if (!turns.some(t => t.reply.trim())){
+      alert('AI 답변을 한 칸 이상 채워주세요.');
+      $('turns').querySelector('.ta').focus(); return;
+    }
+    const data = { turns, title:$('fTitle').value.trim(), route:$('fRoute').value.trim(), voyage:$('fVoyage').value.trim() };
+    let id = editingId;
+    if (id){
+      Object.assign(store.entries.find(x => x.id === id), data);
+    } else {
+      id = newId();
+      store.entries.push(Object.assign({ id, added:Date.now() }, data));
+    }
+    if (!persist(editingId ? '일지를 고쳤어요' : '일지를 기록했어요')) return;
+    closeEditor();
+    renderHero();
+    openReader(id);
+  });
+  $('cancelBtn').addEventListener('click', closeEditor);
+  $('sheet').addEventListener('click', ev => { if (ev.target === $('sheet')) closeEditor(); });
+  document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && !$('sheet').hidden) closeEditor(); });
+
+  /* ---------- 버튼들 ---------- */
+  $('addBtn').addEventListener('click', () => openEditor(null));
+  $('editBtn').addEventListener('click', () => currentId && openEditor(currentId));
+  $('contBtn').addEventListener('click', () => {
+    const e = store.entries.find(x => x.id === currentId);
+    if (!e) return;
+    if (!e.voyage){
+      const v = prompt('이어지는 일지들을 묶을 연속 항해 이름을 정해 주세요', titleOf(e, info(e)));
+      if (v == null || !v.trim()) return;
+      e.voyage = v.trim();
+      persist('연속 항해로 묶었어요');
+    }
+    openEditor(null, { voyage:e.voyage, route:e.route });
+  });
+  $('delBtn').addEventListener('click', () => {
+    if (!currentId || !confirm('이 일지를 지울까요? 백업 파일이 없으면 되돌릴 수 없어요.')) return;
+    const before = store.entries;
+    store.entries = store.entries.filter(x => x.id !== currentId);
+    if (!persist('일지를 지웠어요')){ store.entries = before; return; }
+    showList();
+  });
+  /* ---------- 게시글로 옮기기 ----------
+     게시판 HTML 편집기는 <script>, <style>, class를 지우는 경우가 많아서
+     모든 꾸밈을 style="..."에 직접 넣는다. */
+  const escH = s => String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[ch]));
+  function resolveColor(v, fb){
+    const d = document.createElement('span'); d.style.color = v; document.body.appendChild(d);
+    const c = getComputedStyle(d).color; d.remove();
+    return c || fb;
+  }
+  const PF = {
+    serif: "'Gowun Batang','Noto Serif KR','Nanum Myeongjo','Batang',serif",
+    sans:  "'Gowun Dodum','Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif",
+    hand:  "'Nanum Pen Script','Gowun Batang',cursive"
+  };
+  function postColors(){
+    return { bg:'#1d1622', box:'#271e2d', text:'#f6eef2', muted:'#bdb0b9', faint:'#8d808b', line:'#43384a',
+             accent:resolveColor('var(--accent)', '#e9c46a'), blossom:'#f4b8c9', warn:'#ff8fa3',
+             pinkBox:'#2e2230', pinkLine:'#5c4250' };
+  }
+  function proseH(text, c){
+    let out = '';
+    String(text || '').replace(/\r/g,'').split('\n').forEach(line => {
+      const t = line.trim();
+      if (!t) return;
+      if (isStarLine(t)){
+        out += `<p style="margin:0 0 1em;">${escH(t.slice(1, -1).trim())}</p>`;
+      } else {
+        const inner = t.split(/(\*[^*]+\*)/).map(part => {
+          if (!part) return '';
+          if (/^\*[^*]+\*$/.test(part)) return `<span style="color:${c.muted};">${escH(part.slice(1, -1))}</span>`;
+          return escH(part);
+        }).join('');
+        out += `<p style="margin:0 0 1em;padding-left:.85em;border-left:2px solid ${c.accent};">${inner}</p>`;
+      }
+    });
+    return out;
+  }
+  function statH(s, c){
+    const m = s.value.match(/^(-?\d+(?:\.\d+)?)\s*%/);
+    if (m){
+      const pct = Math.max(0, Math.min(100, parseFloat(m[1])));
+      const col = /폭주|위험|오염|붕괴|과부하/.test(s.label) ? c.warn : c.accent;
+      const note = s.value.slice(m[0].length).trim().replace(/^\(([\s\S]*)\)$/, '$1');
+      return `<div style="margin:0 0 14px;">`
+        + `<table style="width:100%;border-collapse:collapse;border:0;"><tr>`
+        + `<td style="padding:0;border:0;font-family:${PF.sans};font-size:13px;color:${c.text};">${escH(s.label || '수치')}</td>`
+        + `<td style="padding:0;border:0;text-align:right;font-family:${PF.serif};font-weight:700;font-size:17px;color:${col};">${escH(m[1])}%</td>`
+        + `</tr></table>`
+        + `<div style="height:4px;margin-top:6px;background:#3a3040;border-radius:4px;overflow:hidden;"><div style="height:4px;width:${pct}%;background:${col};border-radius:4px;"></div></div>`
+        + (note ? `<div style="margin-top:5px;font-family:${PF.sans};font-size:12px;color:${c.muted};">${escH(note)}</div>` : '')
+        + `</div>`;
+    }
+    return `<div style="margin:0 0 14px;">`
+      + (s.label ? `<div style="font-family:${PF.sans};font-size:12px;color:${c.muted};">${escH(s.label)}</div>` : '')
+      + `<div style="font-family:${PF.sans};font-size:14px;color:${c.text};">${escH(s.value)}</div></div>`;
+  }
+  function reportH(meta, rows, c){
+    if (!(meta.heart || rows.length || meta.extra.length || meta.bgm)) return '';
+    let h = `<div style="margin:30px 0 0;padding:20px 18px;background:${c.box};border:1px solid ${c.line};border-radius:16px;">`
+      + `<div style="font-family:${PF.sans};font-size:12px;color:${c.accent};margin:0 0 14px;">함선 상태 보고</div>`;
+    if (meta.heart){
+      h += `<div style="font-family:${PF.sans};font-size:12px;color:${c.muted};">${escH(meta.heartLabel || '속마음')}</div>`
+        + `<div style="font-family:${PF.hand};font-size:24px;line-height:1.4;color:${c.blossom};margin:2px 0 ${rows.length ? 18 : 0}px;">${escH(meta.heart)}</div>`;
+    }
+    rows.forEach(s => { h += statH(s, c); });
+    meta.extra.forEach(x => { h += `<p style="margin:10px 0 0;font-family:${PF.sans};font-size:13px;color:${c.muted};">${escH(x)}</p>`; });
+    if (meta.bgm){
+      h += `<div style="display:inline-block;margin-top:14px;padding:5px 12px;border:1px solid ${c.line};border-radius:12px;font-family:${PF.sans};font-size:13px;line-height:1.6;color:${c.text};">`
+        + `<span style="color:${c.accent};">♪ 함내 방송</span>&nbsp; ${escH(meta.bgm)}</div>`;
+    }
+    return h + `</div>`;
+  }
+  function userH(t, c){
+    if (!t.user || !t.user.trim()) return '';
+    if (t.showUser){
+      return `<div style="margin:0 0 26px;padding:16px 18px 2px;background:${c.pinkBox};border:1px solid ${c.pinkLine};border-radius:14px;">`
+        + `<div style="font-family:${PF.sans};font-size:12px;color:${c.blossom};margin:0 0 8px;">내가 쓴 부분</div>${proseH(t.user, c)}</div>`;
+    }
+    return `<details style="margin:0 0 26px;padding-left:14px;border-left:2px solid ${c.line};">`
+      + `<summary style="cursor:pointer;font-family:${PF.sans};font-size:13px;color:${c.muted};">내가 쓴 부분 보기</summary>`
+      + `<div style="margin-top:12px;">${proseH(t.user, c)}</div></details>`;
+  }
+  function turnsH(e, c){
+    let h = '';
+    const single = e.turns.length === 1;
+    e.turns.forEach((t, i) => {
+      if (i > 0) h += `<div style="text-align:center;color:${c.faint};margin:28px 0;letter-spacing:.8em;">✧ ✧ ✧</div>`;
+      h += userH(t, c);
+      const { body, meta } = P(t.reply);
+      h += proseH(body, c);
+      const rows = [];
+      if (single){
+        if (meta.summary && e.title) rows.push({ label:'요약', value:meta.summary });
+      } else if (meta.when || meta.place || meta.summary){
+        const tm = (meta.when.match(/\d{1,2}:\d{2}/) || [''])[0];
+        h += `<p style="margin:4px 0 0;padding-top:8px;border-top:1px dashed ${c.line};font-family:${PF.sans};font-size:12px;color:${c.muted};">`
+          + `<span style="color:${c.accent};">상황</span>&nbsp; ${escH([tm || meta.when, meta.place, meta.summary].filter(Boolean).join(', '))}</p>`;
+      }
+      meta.stats.forEach(s => rows.push(s));
+      h += reportH(meta, rows, c);
+    });
+    return h;
+  }
+  function metaTableH(pairs, c){
+    pairs = pairs.filter(p => p[1]);
+    if (!pairs.length) return '';
+    return `<table style="width:100%;border-collapse:collapse;margin:0 0 26px;border-top:1px solid ${c.line};border-bottom:1px solid ${c.line};">`
+      + pairs.map(([k, v]) => `<tr><td style="width:64px;padding:6px 0;border:0;vertical-align:top;font-family:${PF.sans};font-size:12px;color:${c.muted};">${escH(k)}</td>`
+        + `<td style="padding:6px 0;border:0;font-family:${PF.sans};font-size:14px;color:${c.text};">${escH(v)}</td></tr>`).join('')
+      + `</table>`;
+  }
+  function whenRange(inf){
+    let until = inf.lastWhen;
+    if (until && dateOnly(until) === dateOnly(inf.when)){ const tm = until.match(/\d{1,2}:\d{2}/); if (tm) until = tm[0]; }
+    return inf.when + (until ? ' ~ ' + until : '');
+  }
+  function buildPost(e, whole){
+    const c = postColors();
+    const nums = numbers();
+    const all = ordered();
+    const vg = e.voyage ? all.filter(x => x.voyage === e.voyage) : null;
+    const list = (whole && vg) ? vg : [e];
+    const r = store.routes[e.route] || {};
+    const guide = r.guide || LOG.guide;
+    const kick = [LOG.series, e.route].filter(Boolean).join(', ');
+
+    let h = `<div style="max-width:680px;margin:0 auto;padding:30px 22px;background:${c.bg};color:${c.text};border-radius:20px;font-family:${PF.serif};font-size:16px;line-height:1.95;word-break:keep-all;overflow-wrap:anywhere;text-align:left;">`;
+    if (kick) h += `<div style="font-family:${PF.sans};font-size:13px;color:${c.accent};margin:0 0 2px;">${escH(kick)}</div>`;
+
+    if (list.length > 1){
+      const a = nums.get(list[0].id), b = nums.get(list[list.length - 1].id);
+      h += `<div style="font-family:${PF.sans};font-size:13px;color:${c.blossom};">연속 항해, ${list.length}편 (항해일지 ${pad3(a)}–${String(b).padStart(3, '0')})</div>`
+        + `<div style="font-family:${PF.serif};font-weight:700;font-size:26px;line-height:1.35;margin:6px 0 18px;">${escH(e.voyage)}</div>`;
+      const fi = info(list[0]), li = info(list[list.length - 1]);
+      h += metaTableH([['일시', whenRange({ when:fi.when, lastWhen:(li.when && li.when !== fi.when) ? li.when : '' })], ['함선', LOG.ship], ['함장', LOG.captain], ['가이드', guide]], c);
+      list.forEach((x, i) => {
+        const inf = info(x);
+        if (i > 0) h += `<div style="height:1px;background:${c.line};margin:40px 0;"></div>`;
+        h += `<div style="font-family:${PF.sans};font-size:13px;color:${c.accent};">${i + 1}편, 항해일지 ${pad3(nums.get(x.id))}</div>`
+          + `<div style="font-family:${PF.serif};font-weight:700;font-size:20px;line-height:1.45;margin:4px 0 4px;">${escH(titleOf(x, inf))}</div>`
+          + `<div style="font-family:${PF.sans};font-size:12px;color:${c.muted};margin:0 0 22px;">${escH([whenRange(inf), inf.place].filter(Boolean).join(', '))}</div>`
+          + turnsH(x, c);
+      });
+    } else {
+      const inf = info(e);
+      const vi = vg ? vg.findIndex(x => x.id === e.id) : -1;
+      h += `<div style="font-family:${PF.sans};font-size:13px;color:${c.muted};">항해일지 ${pad3(nums.get(e.id))}`
+        + (vg ? `<span style="color:${c.blossom};">, 연속 항해 ${escH(e.voyage)} ${vi + 1}/${vg.length}편</span>` : '') + `</div>`
+        + `<div style="font-family:${PF.serif};font-weight:700;font-size:24px;line-height:1.4;margin:6px 0 18px;">${escH(titleOf(e, inf))}</div>`
+        + metaTableH([['일시', whenRange(inf)], ['위치', inf.place], ['가이드', guide]], c)
+        + turnsH(e, c);
+    }
+    h += `<div style="margin-top:30px;text-align:right;font-family:${PF.sans};font-size:12px;color:${c.faint};">${escH([LOG.ship, '항해일지'].filter(Boolean).join(' '))}${LOG.captain ? ', 함장 ' + escH(LOG.captain) : ''}</div>`;
+    return h + `</div>`;
+  }
+
+  let postEntry = null;
+  function refreshPost(){
+    let code;
+    if (readStyle === 'classic') code = buildPost(postEntry, $('postWhole').checked);
+    else {
+      const list = ($('postWhole').checked && postEntry.voyage) ? ordered().filter(x => x.voyage === postEntry.voyage) : [postEntry];
+      code = list.map((x, i) => (i ? '<div style="height:28px;"></div>' : '') + FMT.build(fmtData(x), fmtOpts(readStyle, { webfont:i === 0 }))).join('');
+    }
+    $('postStyleHint').textContent = '지금 읽고 있는 ‘' + (READ_STYLES.find(x => x[0] === readStyle) || ['', '기본'])[1] + '’ 서식으로 만들어요. 서식을 바꾸려면 창을 닫고 일지 위의 서식을 고르세요.';
+    $('postImgOut').hidden = true;
+    $('postCode').value = code;
+    $('postPreview').innerHTML = code;   // 전부 escH를 거친 글자만 들어 있다
+  }
+  function openPost(){
+    const e = store.entries.find(x => x.id === currentId);
+    if (!e) return;
+    postEntry = e;
+    const vg = e.voyage ? store.entries.filter(x => x.voyage === e.voyage) : [];
+    $('postWholeWrap').hidden = vg.length < 2;
+    $('postWhole').checked = false;
+    $('postWholeLabel').textContent = '연속 항해 ‘' + e.voyage + '’ ' + vg.length + '편을 한 글로 묶기';
+    refreshPost();
+    lastFocus = document.activeElement;
+    $('postSheet').hidden = false;
+    $('postSheet').querySelector('.panel').scrollTop = 0;
+    $('postCopy').focus();
+  }
+  function closePost(){ $('postSheet').hidden = true; if (lastFocus) lastFocus.focus(); }
+  $('postBtn').addEventListener('click', openPost);
+  $('postWhole').addEventListener('change', refreshPost);
+  $('postClose').addEventListener('click', closePost);
+  $('postSheet').addEventListener('click', ev => { if (ev.target === $('postSheet')) closePost(); });
+  document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && !$('postSheet').hidden) closePost(); });
+  $('postCopy').addEventListener('click', async () => {
+    const ta = $('postCode');
+    let ok = false;
+    try{ await navigator.clipboard.writeText(ta.value); ok = true; }catch(e){}
+    if (!ok){
+      ta.focus(); ta.select();
+      try{ ok = document.execCommand('copy'); }catch(e){}
+    }
+    toast(ok ? '코드를 복사했어요. 게시판 HTML 모드에 붙여넣으세요' : '자동 복사가 막혔어요. 코드 칸을 눌러 전체 선택 후 복사해 주세요');
+  });
+  $('postCode').addEventListener('focus', ev => ev.target.select());
+  $('postImg').addEventListener('click', async () => {
+    if (typeof html2canvas !== 'function'){ toast('이미지 도구를 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침해 주세요'); return; }
+    const btn = $('postImg'); btn.disabled = true; btn.textContent = '그리는 중…';
+    const box = document.createElement('div'); box.className = 'render-box';
+    let code;
+    if (readStyle === 'classic') code = buildPost(postEntry, $('postWhole').checked);
+    else {
+      const list = ($('postWhole').checked && postEntry.voyage) ? ordered().filter(x => x.voyage === postEntry.voyage) : [postEntry];
+      code = list.map((x, i) => (i ? '<div style="height:28px;"></div>' : '') + FMT.build(fmtData(x), fmtOpts(readStyle, { fold:false }))).join('');
+    }
+    box.innerHTML = code.replace(/<details[^>]*>/g, '<div>').replace(/<\/details>/g, '</div>').replace(/<summary[\s\S]*?<\/summary>/g, '');
+    document.body.appendChild(box);
+    try{
+      try{ await document.fonts.ready; }catch(e){}
+      const h = box.offsetHeight || 1000;
+      const scale = Math.max(1, Math.min(2, 15000 / h, Math.sqrt(16000000 / (640 * h))));
+      const canvas = await html2canvas(box, { scale, backgroundColor:null, logging:false });
+      $('postImgPng').src = canvas.toDataURL('image/png');
+      $('postImgOut').hidden = false;
+      $('postImgOut').scrollIntoView({ block:'nearest' });
+      toast(h > 3000 ? '이미지를 만들었어요. 세로로 길어서 게시판이 줄일 수 있어요' : '이미지를 만들었어요');
+    }catch(e){ toast('이미지를 만들지 못했어요. 다시 눌러 주세요'); }
+    finally{ box.remove(); btn.disabled = false; btn.textContent = '이미지로 만들기'; }
+  });
+  $('postDl').addEventListener('click', () => {
+    const e = postEntry; if (!e) return;
+    const name = ($('postWhole').checked && e.voyage ? e.voyage : titleOf(e, info(e))).replace(/[\\/:*?"<>|]/g, '').slice(0, 40) || '항해일지';
+    const blob = new Blob([$('postCode').value], { type:'text/html;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name + '.html';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  });
+
+  /* ================= 읽기 서식 (크레센도 서식기와 같은 디자인) ================= */
+  const FMT = (function(){
+  const PALETTES = [
+    { id:'blossom', name:'벚꽃 편지', paper:'#fdf7f8', ink:'#3a2a31', muted:'#8a7279', line:'#eed9df', accent:'#c65b7c', tint:'#f7e6ec', tint2:'#efe8f4', bar:'#ead3db', warn:'#b8323f' },
+    { id:'night',   name:'밤 항해',   paper:'#1b2132', ink:'#e8ecf4', muted:'#9aa4ba', line:'#333d58', accent:'#e5bf6a', tint:'#262f47', tint2:'#2f2a45', bar:'#3a4462', warn:'#ff8fa3' },
+    { id:'mist',    name:'해무',      paper:'#f2f7f6', ink:'#203538', muted:'#6b8487', line:'#cfe1de', accent:'#2c8580', tint:'#dfeeec', tint2:'#e6ecf5', bar:'#c5dcd8', warn:'#c0453a' },
+    { id:'ink',     name:'먹과 인주', paper:'#f8f7f4', ink:'#222020', muted:'#7a7570', line:'#dedad2', accent:'#b03a2e', tint:'#eeece6', tint2:'#f4ece5', bar:'#dcd8cf', warn:'#b03a2e' }
+  ];
+  const FONTS = {
+    serif:"'Gowun Batang','Noto Serif KR','Nanum Myeongjo','Batang',serif",
+    sans:"'Gowun Dodum','Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif",
+    hand:"'Nanum Pen Script','Gowun Batang',cursive"
+  };
+  const FONT_LINK = '<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Nanum+Pen+Script&display=swap" rel="stylesheet">';
+
+  /* ---------- 코드 만들기 (모든 꾸밈은 style 속성 안에) ---------- */
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[ch]));
+  const SN = () => FONTS.sans, SR = () => FONTS.serif, HD = () => FONTS.hand;
+  const T0 = 'border-collapse:collapse;border:0;margin:0;';
+  const TD = 'padding:0;border:0;';
+
+  // 대사 한 줄을 서식마다 다르게
+  function prose(text, P, say){
+    let out = '';
+    String(text || '').replace(/\r/g,'').split('\n').forEach(line => {
+      const t = line.trim();
+      if (!t) return;
+      if (isStarLine(t)){ out += `<p style="margin:0 0 1em;">${esc(t.slice(1, -1).trim())}</p>`; return; }
+      const inner = t.split(/(\*[^*]+\*)/).map(part => {
+        if (!part) return '';
+        if (/^\*[^*]+\*$/.test(part)) return `<span style="color:${P.muted};">${esc(part.slice(1, -1))}</span>`;
+        return esc(part);
+      }).join('');
+      out += say(inner);
+    });
+    return out;
+  }
+  const SAY = {
+    letter:(P, user) => s => `<p style="margin:0 0 1em;"><span style="display:inline-block;max-width:100%;padding:3px 13px;background:${user ? P.paper : P.tint};border-radius:4px 14px 14px 14px;">${s}</span></p>`,
+    log:(P) => s => `<p style="margin:0 0 1em;padding-left:.85em;border-left:2px solid ${P.accent};">${s}</p>`,
+    score:(P) => s => `<p style="margin:0 0 1em;padding-left:1.5em;text-indent:-1.5em;"><span style="display:inline-block;width:1.5em;text-indent:0;color:${P.accent};">♪</span>${s}</p>`,
+    vow:(P) => s => `<p style="margin:0 0 1em;padding:0 .4em;"><span style="color:${P.accent};font-family:${SR()};">“</span>${s}<span style="color:${P.accent};font-family:${SR()};">”</span></p>`
+  };
+
+  function stat(s, P, opt){
+    opt = opt || {};
+    const m = s.value.match(/^(-?\d+(?:\.\d+)?)\s*%/);
+    if (m){
+      const pct = Math.max(0, Math.min(100, parseFloat(m[1])));
+      const warn = opt.warn && /폭주|위험|오염|붕괴|과부하/.test(s.label);
+      const col = warn ? (P.warn || P.accent) : P.accent;
+      const note = s.value.slice(m[0].length).trim().replace(/^\(([\s\S]*)\)$/, '$1');
+      return `<div style="margin:0 0 12px;font-family:${SN()};">`
+        + `<table style="width:100%;${T0}"><tr>`
+        + `<td style="${TD}font-size:13px;color:${P.ink};">${esc(s.label || '수치')}</td>`
+        + `<td style="${TD}text-align:right;font-size:14px;font-weight:700;color:${col};">${esc(m[1])}%</td></tr></table>`
+        + `<div style="height:${opt.h || 3}px;margin-top:5px;background:${P.bar};border-radius:3px;overflow:hidden;"><div style="height:${opt.h || 3}px;width:${pct}%;background:${col};"></div></div>`
+        + (note ? `<div style="margin-top:4px;font-size:12px;color:${P.muted};">${esc(note)}</div>` : '')
+        + `</div>`;
+    }
+    return `<div style="margin:0 0 12px;font-family:${SN()};">`
+      + (s.label ? `<div style="font-size:12px;color:${P.muted};">${esc(s.label)}</div>` : '')
+      + `<div style="font-size:13px;color:${P.ink};">${esc(s.value)}</div></div>`;
+  }
+  function userBlock(t, o, P, kind){
+    if (!t.user || !t.user.trim()) return '';
+    const name = o.me || '내 메시지';
+    const fold = o.fold === 'auto' ? t.showUser !== true : o.fold;
+    const say = kind === 'letter' ? SAY.letter(P, true) : SAY[kind](P);
+    const box = (head) => `<div style="display:table;margin-left:auto;max-width:88%;text-align:left;padding:12px 16px 2px;background:${P.tint2};border-radius:${kind === 'letter' ? '14px 14px 4px 14px' : '10px'};">${head}${prose(t.user, P, say)}</div>`;
+    if (fold){
+      return `<details style="margin:0 0 24px;">`
+        + `<summary style="cursor:pointer;text-align:right;font-family:${SN()};font-size:13px;color:${P.muted};">${esc(name)}의 말 보기</summary>`
+        + `<div style="margin-top:10px;">${box('')}</div></details>`;
+    }
+    return `<div style="margin:0 0 24px;">`
+      + box(`<div style="font-family:${SN()};font-size:12px;color:${P.accent};margin:0 0 6px;">${esc(name)}</div>`) + `</div>`;
+  }
+  function tagsH(data, P, center){
+    const tags = String(data.tags || '').split(/[,，]/).map(s => s.trim().replace(/^#/, '')).filter(Boolean);
+    if (!tags.length) return '';
+    return `<div style="margin-top:26px;font-family:${SN()};line-height:1.4;${center ? 'text-align:center;' : ''}">`
+      + tags.map(t => `<span style="display:inline-block;margin:0 3px 6px;padding:3px 11px;border:1px solid ${P.line};border-radius:999px;font-size:12px;color:${P.muted};">#${esc(t)}</span>`).join('')
+      + `</div>`;
+  }
+  // 점점 커지는 막대: 크레센도 기호 대신 (게시판이 SVG를 지워도 남는다)
+  function cresc(P, n){
+    let bars = '';
+    for (let i = 0; i < n; i++){
+      const hgt = 3 + Math.round(i * 14 / (n - 1));
+      bars += `<span style="display:inline-block;width:3px;height:${hgt}px;margin:0 2px;background:${P.accent};opacity:${(0.35 + 0.65 * i / (n - 1)).toFixed(2)};vertical-align:bottom;border-radius:1px;"></span>`;
+    }
+    return bars;
+  }
+  const ROMAN = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
+
+  function prep(data, o){
+    const P = PALETTES.find(p => p.id === o.palette) || PALETTES[0];
+    const parsed = data.turns.map(t => ({ t, ...parse(t.reply) }));
+    const firstMeta = (parsed.find(x => x.meta.when) || parsed[0] || { meta:{} }).meta;
+    const when = data.when || firstMeta.when || '';
+    const place = data.place || firstMeta.place || '';
+    const title = data.title || firstMeta.summary || '';
+    const dm = when.match(/(\d{4})[-.\/](\d{1,2})[-.\/](\d{1,2})/);
+    const tm = (when.match(/\d{1,2}:\d{2}/) || [''])[0];
+    let bgm = ''; parsed.forEach(x => { if (x.meta.bgm) bgm = x.meta.bgm; });
+    return { P, parsed, when, place, title, dm, tm, bgm, body:o.font === 'sans' ? FONTS.sans : FONTS.serif, multi:parsed.length > 1 };
+  }
+  const situ = (m, P, pre) => {
+    if (!(m.when || m.place || m.summary)) return '';
+    const tm = (m.when.match(/\d{1,2}:\d{2}/) || [''])[0];
+    return `<div style="margin:0 0 6px;font-family:${SN()};font-size:12px;color:${P.muted};">${pre || ''}${esc([tm || m.when, m.place, m.summary].filter(Boolean).join(', '))}</div>`;
+  };
+  const shell = (o, P, body, extra) => (o.webfont ? FONT_LINK : '')
+    + `<div style="max-width:640px;margin:0 auto;background:${P.paper};color:${P.ink};font-family:${body};font-size:16px;line-height:1.95;word-break:keep-all;overflow-wrap:anywhere;text-align:left;box-sizing:border-box;${extra}">`;
+
+  /* ===== 편지 ===== */
+  function buildLetter(data, o){
+    const { P, parsed, when, place, title, dm, bgm, body, multi } = prep(data, o);
+    let h = shell(o, P, body, `padding:34px 26px 28px;border:1px solid ${P.line};border-radius:6px;`);
+    h += `<table style="width:100%;${T0}"><tr><td style="${TD}vertical-align:top;">`;
+    if (data.eyebrow) h += `<div style="font-family:${SN()};font-size:13px;color:${P.accent};margin:0 0 4px;">${esc(data.eyebrow)}</div>`;
+    if (title) h += `<div style="font-family:${SR()};font-weight:700;font-size:23px;line-height:1.45;margin:0 0 6px;">${esc(title)}</div>`;
+    const sub = [when, place].filter(Boolean).join(', ');
+    if (sub) h += `<div style="font-family:${SN()};font-size:13px;color:${P.muted};">${esc(sub)}</div>`;
+    h += `</td>`;
+    if (dm){
+      h += `<td style="width:74px;padding:0 0 0 12px;border:0;vertical-align:top;text-align:right;">`
+        + `<div style="display:inline-block;width:62px;padding:7px 0 6px;border:1.5px dashed ${P.accent};border-radius:4px;text-align:center;color:${P.accent};font-family:${SN()};line-height:1.2;">`
+        + `<div style="font-size:11px;">${esc(dm[1])}</div><div style="font-size:17px;font-weight:700;">${esc(dm[2].padStart(2,'0') + '.' + dm[3].padStart(2,'0'))}</div></div></td>`;
+    }
+    h += `</tr></table><div style="height:1px;background:${P.line};margin:20px 0 26px;"></div>`;
+    parsed.forEach((x, i) => {
+      if (i > 0) h += `<div style="text-align:center;color:${P.accent};margin:26px 0;font-size:14px;letter-spacing:.6em;padding-left:.6em;">❀ ❀ ❀</div>`;
+      h += userBlock(x.t, o, P, 'letter') + prose(x.body, P, SAY.letter(P, false));
+      if (multi && i > 0) h += situ(x.meta, P, '— ');
+      const heart = o.heart && x.meta.heart, stats = o.stats ? x.meta.stats : [];
+      if (heart || stats.length){
+        h += `<div style="margin:30px 0 0;padding:20px 0 0;border-top:1px dashed ${P.accent};">`;
+        if (heart){
+          h += `<table style="width:100%;${T0}margin-bottom:${stats.length ? 18 : 0}px;"><tr><td style="width:56px;${TD}vertical-align:top;">`
+            + `<div style="width:46px;height:46px;border:1.5px solid ${P.accent};border-radius:50%;text-align:center;line-height:44px;font-family:${SN()};font-size:13px;color:${P.accent};">P.S.</div></td>`
+            + `<td style="${TD}vertical-align:top;"><div style="font-family:${SN()};font-size:12px;color:${P.muted};">${esc(x.meta.heartLabel || '속마음')}</div>`
+            + `<div style="font-family:${HD()};font-size:25px;line-height:1.4;color:${P.accent};">${esc(x.meta.heart)}</div></td></tr></table>`;
+        }
+        stats.forEach(s => h += stat(s, P));
+        h += `</div>`;
+      }
+    });
+    if (o.bgm && bgm){
+      h += `<table style="width:100%;${T0}margin-top:28px;background:${P.tint};border-radius:12px;"><tr>`
+        + `<td style="width:46px;padding:12px 0 12px 14px;border:0;vertical-align:middle;"><div style="width:30px;height:30px;border-radius:50%;background:${P.accent};color:${P.paper};text-align:center;line-height:30px;font-size:11px;">▶</div></td>`
+        + `<td style="padding:12px 14px 12px 4px;border:0;vertical-align:middle;font-family:${SN()};"><div style="font-size:13px;color:${P.ink};">${esc(bgm)}</div>`
+        + `<div style="height:2px;margin-top:6px;background:${P.bar};border-radius:2px;"><div style="width:38%;height:2px;background:${P.accent};border-radius:2px;"></div></div></td></tr></table>`;
+    }
+    return h + tagsH(data, P) + `</div>`;
+  }
+
+  /* ===== 항해일지 ===== */
+  function buildLog(data, o){
+    const { P, parsed, when, place, title, bgm, body, multi } = prep(data, o);
+    const cell = (k, v) => `<td style="width:50%;padding:9px 12px;border:1px solid ${P.line};vertical-align:top;"><div style="font-family:${SN()};font-size:11px;color:${P.muted};line-height:1.4;">${esc(k)}</div><div style="font-family:${SR()};font-weight:700;font-size:15px;line-height:1.5;">${esc(v || '-')}</div></td>`;
+    let h = shell(o, P, body, `padding:30px 22px 24px;border:1px solid ${P.line};border-radius:12px;`);
+    if (data.eyebrow) h += `<div style="font-family:${SN()};font-size:13px;color:${P.accent};">${esc(data.eyebrow)}</div>`;
+    h += `<div style="font-family:${SN()};font-size:13px;color:${P.muted};margin-top:2px;">항해일지${data.no ? ' No.' + esc(String(data.no).padStart(3, '0')) : ''}</div>`;
+    if (title) h += `<div style="font-family:${SR()};font-weight:700;font-size:23px;line-height:1.45;margin:6px 0 18px;">${esc(title)}</div>`;
+    h += `<table style="width:100%;${T0}border-collapse:collapse;margin-bottom:26px;">`
+      + `<tr>${cell('함선', data.ship)}${cell('함장', data.captain)}</tr>`
+      + `<tr>${cell('일시', when)}${cell('위치', place)}</tr>`;
+    if (data.dest){
+      h += `<tr><td colspan="2" style="padding:9px 12px 12px;border:1px solid ${P.line};">`
+        + `<div style="font-family:${SN()};font-size:11px;color:${P.muted};line-height:1.4;">목적지</div>`
+        + `<div style="font-family:${SR()};font-weight:700;font-size:15px;color:${P.accent};line-height:1.5;">${esc(data.dest)}</div>`
+        + `<table style="width:100%;${T0}margin-top:8px;"><tr>`
+        + `<td style="width:10px;${TD}"><div style="width:8px;height:8px;border-radius:50%;background:${P.accent};"></div></td>`
+        + `<td style="${TD}padding:0 8px;"><div style="border-top:2px dashed ${P.line};height:0;"></div></td>`
+        + `<td style="width:16px;${TD}font-family:${SR()};font-size:18px;line-height:1;color:${P.accent};text-align:right;">∞</td></tr></table></td></tr>`;
+    }
+    h += `</table>`;
+    parsed.forEach((x, i) => {
+      if (i > 0) h += `<div style="text-align:center;color:${P.muted};margin:26px 0;letter-spacing:.8em;padding-left:.8em;">✧ ✧ ✧</div>`;
+      h += userBlock(x.t, o, P, 'log') + prose(x.body, P, SAY.log(P));
+      if (multi && i > 0) h += situ(x.meta, P, `<span style="color:${P.accent};">상황</span>&nbsp; `);
+      const heart = o.heart && x.meta.heart, stats = o.stats ? x.meta.stats : [];
+      if (heart || stats.length){
+        h += `<div style="margin:28px 0 0;padding:18px 18px 8px;background:${P.tint};border:1px solid ${P.line};border-radius:12px;">`
+          + `<div style="font-family:${SN()};font-size:12px;color:${P.accent};margin-bottom:12px;">함선 상태 보고</div>`;
+        if (heart) h += `<div style="font-family:${SN()};font-size:12px;color:${P.muted};">${esc(x.meta.heartLabel || '속마음')}</div>`
+          + `<div style="font-family:${HD()};font-size:24px;line-height:1.4;color:${P.accent};margin-bottom:14px;">${esc(x.meta.heart)}</div>`;
+        stats.forEach(s => h += stat(s, P, { warn:true, h:4 }));
+        h += `</div>`;
+      }
+    });
+    if (o.bgm && bgm) h += `<div style="display:inline-block;margin-top:20px;padding:5px 12px;border:1px solid ${P.line};border-radius:12px;font-family:${SN()};font-size:13px;line-height:1.6;"><span style="color:${P.accent};">♪ 함내 방송</span>&nbsp; ${esc(bgm)}</div>`;
+    h += tagsH(data, P);
+    const sign = [data.ship ? data.ship + ' 항해일지' : '', data.captain ? '함장 ' + data.captain : ''].filter(Boolean).join(', ');
+    if (sign) h += `<div style="margin-top:22px;text-align:right;font-family:${SN()};font-size:12px;color:${P.muted};">${esc(sign)}</div>`;
+    return h + `</div>`;
+  }
+
+  /* ===== 악보 ===== */
+  function buildScore(data, o){
+    const { P, parsed, when, place, title, bgm, body, multi } = prep(data, o);
+    const staff = () => { let s = ''; for (let i = 0; i < 5; i++) s += `<div style="height:5px;border-bottom:1px solid ${P.line};"></div>`; return `<div style="margin:0 0 6px;">${s}</div>`; };
+    let h = shell(o, P, body, `padding:30px 24px 26px;border-radius:4px;border-top:3px solid ${P.accent};border-bottom:1px solid ${P.line};`);
+    h += staff();
+    h += `<table style="width:100%;${T0}margin-bottom:20px;"><tr><td style="${TD}font-family:${SR()};font-style:italic;font-size:13px;color:${P.accent};">${data.eyebrow ? esc(data.eyebrow) : 'crescendo'}</td>`
+      + `<td style="${TD}text-align:right;white-space:nowrap;line-height:1;">${cresc(P, 9)}</td></tr></table>`;
+    if (title) h += `<div style="text-align:center;font-family:${SR()};font-weight:700;font-size:24px;line-height:1.45;margin:0 0 4px;">${esc(title)}</div>`;
+    const duet = [data.partner, data.me].filter(Boolean);
+    const jong = w => { const c = w.charCodeAt(w.length - 1) - 0xac00; return c >= 0 && c <= 11171 && c % 28 !== 0; };
+    if (duet.length){
+      const last = duet[duet.length - 1];
+      const names = duet.length > 1 ? duet[0] + (jong(duet[0]) ? '과 ' : '와 ') + last : last;
+      h += `<div style="text-align:center;font-family:${SR()};font-style:italic;font-size:14px;color:${P.muted};">${esc(names + (jong(last) ? '을' : '를'))} 위한 이중주</div>`;
+    }
+    const sub = [when, place].filter(Boolean).join(', ');
+    if (sub) h += `<div style="text-align:right;font-family:${SN()};font-size:12px;color:${P.muted};margin-top:14px;">${esc(sub)}</div>`;
+    h += staff() + `<div style="height:18px;"></div>`;
+    parsed.forEach((x, i) => {
+      if (multi) h += `<div style="font-family:${SR()};font-weight:700;font-size:15px;color:${P.accent};margin:${i ? 34 : 0}px 0 12px;">${ROMAN[i] || i + 1}.</div>`;
+      if (multi && i > 0) h += situ(x.meta, P);
+      h += userBlock(x.t, o, P, 'score') + prose(x.body, P, SAY.score(P));
+      const heart = o.heart && x.meta.heart, stats = o.stats ? x.meta.stats : [];
+      if (heart || stats.length){
+        h += `<div style="margin:30px 0 0;">`
+          + `<table style="width:100%;${T0}"><tr><td style="${TD}font-family:${SR()};font-style:italic;font-size:15px;color:${P.accent};width:56px;">Coda</td><td style="${TD}"><div style="border-top:1px solid ${P.line};height:0;"></div></td></tr></table>`;
+        if (heart) h += `<div style="font-family:${HD()};font-size:25px;line-height:1.4;color:${P.ink};margin:10px 0 ${stats.length ? 14 : 0}px;">${esc(x.meta.heart)}</div>`;
+        stats.forEach(s => h += stat(s, P));
+        h += `</div>`;
+      }
+    });
+    if (o.bgm && bgm) h += `<div style="margin-top:26px;padding-top:12px;border-top:1px solid ${P.line};font-family:${SN()};font-size:13px;"><span style="color:${P.accent};">오늘의 연주곡</span>&nbsp; ${esc(bgm)}</div>`;
+    h += tagsH(data, P);
+    h += `<div style="margin-top:18px;text-align:right;font-family:${SR()};font-style:italic;font-size:13px;color:${P.muted};">fine.</div>`;
+    return h + `</div>`;
+  }
+
+  /* ===== 서약서 ===== */
+  function buildVow(data, o){
+    const { P, parsed, when, place, title, dm, bgm, body, multi } = prep(data, o);
+    let h = shell(o, P, body, `padding:10px;border-radius:4px;`);
+    h += `<div style="border:3px double ${P.accent};padding:30px 22px 26px;">`;
+    h += `<div style="text-align:center;font-family:${SR()};font-size:13px;letter-spacing:.5em;padding-left:.5em;color:${P.accent};">誓 約</div>`;
+    if (data.eyebrow) h += `<div style="text-align:center;font-family:${SN()};font-size:12px;color:${P.muted};margin-top:2px;">${esc(data.eyebrow)}</div>`;
+    if (title) h += `<div style="text-align:center;font-family:${SR()};font-weight:700;font-size:23px;line-height:1.45;margin:12px 0 6px;">${esc(title)}</div>`;
+    const duet = [data.partner, data.me].filter(Boolean);
+    if (duet.length) h += `<div style="text-align:center;font-family:${SR()};font-size:16px;margin:4px 0;">${duet.map(esc).join(` <span style="color:${P.accent};">♡</span> `)}</div>`;
+    const sub = [when, place ? place + '에서' : ''].filter(Boolean).join(', ');
+    if (sub) h += `<div style="text-align:center;font-family:${SN()};font-size:12px;color:${P.muted};">${esc(sub)}</div>`;
+    h += `<div style="text-align:center;color:${P.accent};margin:16px 0 24px;font-size:14px;">— ❦ —</div>`;
+    parsed.forEach((x, i) => {
+      if (i > 0) h += `<div style="text-align:center;color:${P.accent};margin:24px 0;font-size:13px;">❦</div>`;
+      if (multi && i > 0) h += situ(x.meta, P);
+      h += userBlock(x.t, o, P, 'vow') + prose(x.body, P, SAY.vow(P));
+      const heart = o.heart && x.meta.heart, stats = o.stats ? x.meta.stats : [];
+      if (heart){
+        h += `<div style="margin:28px 6px 0;padding:18px 16px;background:${P.tint};border-radius:8px;text-align:center;">`
+          + `<div style="font-family:${SN()};font-size:12px;color:${P.accent};">서약의 말</div>`
+          + `<div style="font-family:${HD()};font-size:25px;line-height:1.45;color:${P.ink};margin-top:4px;">${esc(x.meta.heart)}</div></div>`;
+      }
+      if (stats.length){ h += `<div style="margin:20px 6px 0;">`; stats.forEach(s => h += stat(s, P)); h += `</div>`; }
+    });
+    if (o.bgm && bgm) h += `<div style="text-align:center;margin-top:24px;font-family:${SN()};font-size:13px;color:${P.muted};">함께 들은 곡&nbsp; <span style="color:${P.ink};">${esc(bgm)}</span></div>`;
+    if (duet.length){
+      const seal = n => `<td style="${TD}padding:0 10px;text-align:center;vertical-align:bottom;">`
+        + `<div style="display:inline-block;width:38px;height:38px;border:1.5px solid ${P.accent};border-radius:50%;line-height:36px;text-align:center;font-family:${SR()};font-weight:700;font-size:15px;color:${P.accent};">${esc(n.slice(0, 1))}</div>`
+        + `<div style="margin-top:6px;padding-top:4px;border-top:1px solid ${P.line};min-width:80px;font-family:${SR()};font-size:14px;">${esc(n)}</div></td>`;
+      h += `<table style="${T0}margin:30px auto 0;"><tr>${duet.map(seal).join('')}</tr></table>`;
+      if (dm) h += `<div style="text-align:center;font-family:${SN()};font-size:12px;color:${P.muted};margin-top:10px;">${esc(dm[1] + '년 ' + Number(dm[2]) + '월 ' + Number(dm[3]) + '일')}</div>`;
+    }
+    h += tagsH(data, P, true);
+    return h + `</div></div>`;
+  }
+
+  const BUILDERS = { letter:buildLetter, log:buildLog, score:buildScore, vow:buildVow };
+  function build(data, o){ return (BUILDERS[o.style] || buildLetter)(data, o); }
+    return { build, PALETTES };
+  })();
+
+  /* ---------- 읽기 서식 고르기 ---------- */
+  const READ_STYLES = [['classic','기본'],['letter','편지'],['log','항해일지'],['score','악보'],['vow','서약서']];
+  const DEFAULT_PAL = { letter:'blossom', log:'night', score:'blossom', vow:'ink' };
+  let readStyle = LOG.readStyle || 'classic';
+  let readPal = {};
+  try{
+    const r = JSON.parse(localStorage.getItem('home-read') || 'null');
+    if (r){ if (READ_STYLES.some(x => x[0] === r.style)) readStyle = r.style; readPal = r.pal || {}; }
+  }catch(e){}
+  function saveRead(){ try{ localStorage.setItem('home-read', JSON.stringify({ style:readStyle, pal:readPal })); }catch(e){} }
+  const palOf = st => readPal[st] || DEFAULT_PAL[st] || 'blossom';
+
+  function renderReadBar(){
+    const seg = $('readStyles'); seg.replaceChildren();
+    READ_STYLES.forEach(([id, name]) => {
+      const b = el('button', null, name); b.type = 'button';
+      b.setAttribute('aria-pressed', String(readStyle === id));
+      b.addEventListener('click', () => { readStyle = id; saveRead(); openReader(currentId); });
+      seg.appendChild(b);
+    });
+    const pals = $('readPals'); pals.replaceChildren();
+    pals.hidden = readStyle === 'classic';
+    FMT.PALETTES.forEach(p => {
+      const b = el('button'); b.type = 'button';
+      b.style.background = `linear-gradient(135deg, ${p.paper} 50%, ${p.accent} 50%)`;
+      b.title = p.name; b.setAttribute('aria-label', p.name);
+      b.setAttribute('aria-pressed', String(palOf(readStyle) === p.id));
+      b.addEventListener('click', () => { readPal[readStyle] = p.id; saveRead(); renderReadBar(); renderFormatted(store.entries.find(x => x.id === currentId)); });
+      pals.appendChild(b);
+    });
+  }
+  function fmtData(e){
+    const inf = info(e);
+    const r = store.routes[e.route] || {};
+    return {
+      eyebrow:[LOG.series, e.route].filter(Boolean).join(', '),
+      title:titleOf(e, inf), when:inf.when, place:inf.place,
+      me:LOG.me, partner:LOG.partner, ship:LOG.ship, captain:LOG.captain,
+      no:numbers().get(e.id), dest:r.destination || LOG.destination, tags:'',
+      turns:e.turns
+    };
+  }
+  const fmtOpts = (style, extra) => Object.assign({ style, palette:palOf(style), font:'serif', fold:'auto', heart:true, stats:true, bgm:true, webfont:false, me:LOG.me }, extra || {});
+  function renderFormatted(e){
+    const classic = readStyle === 'classic' || !e;
+    $('rClassic').hidden = !classic;
+    $('rFormatted').hidden = classic;
+    if (!classic) $('rFormatted').innerHTML = FMT.build(fmtData(e), fmtOpts(readStyle));   // 글자는 전부 esc()를 거친다
+  }
+
+  /* ---------- 주소 ---------- */
+  const squash = s => String(s || '').replace(/\s+/g, '').toLowerCase();
+  const INIT_Q = new URLSearchParams(location.search);   // 데이터가 오기 전에 주소가 지워지지 않게 처음 값을 잡아둔다
+  let urlReady = false;
+  function syncUrl(){
+    if (location.protocol === 'file:' || !urlReady) return;
+    const q = new URLSearchParams();
+    if (routeFilter) q.set('route', routeFilter);
+    if (currentId) q.set('log', currentId);
+    const qs = q.toString();
+    const url = location.pathname + (qs ? '?' + qs : '') + location.hash;
+    if (url !== location.pathname + location.search + location.hash) history.replaceState(null, '', url);
+  }
+  function applyUrl(){
+    const q = INIT_Q;
+    urlReady = true;
+    const r = q.get('route');
+    if (r){
+      const names = [...new Set(store.entries.map(e => e.route).filter(Boolean))];
+      const hit = names.find(n => squash(n) === squash(r));
+      routeFilter = hit || null;
+    }
+    const id = q.get('log');
+    if (id && store.entries.some(e => e.id === id)) openReader(id);
+    else showList();
+  }
+  $('linkBtn').addEventListener('click', async () => {
+    const q = new URLSearchParams();
+    const e = store.entries.find(x => x.id === currentId);
+    if (e && e.route) q.set('route', e.route);
+    if (currentId) q.set('log', currentId);
+    const url = location.origin + location.pathname + '?' + q.toString();
+    let ok = false;
+    try{ await navigator.clipboard.writeText(url); ok = true; }catch(err){}
+    toast(ok ? '이 일지로 바로 오는 링크를 복사했어요' : url);
+  });
+
+  /* ---------- 편집 모드 (#edit) ---------- */
+  function applyEditMode(){
+    canEdit = isOwner || (!inLope && editHash());
+    $('toolbar').hidden = !canEdit;
+    $('readerActs').hidden = !canEdit;
+    const notice = $('notice');
+    notice.hidden = true;
+    if (previewFallback){
+      notice.hidden = false;
+      notice.textContent = '파일을 컴퓨터에서 바로 열어서 data.json을 못 읽었어요. 지금은 예시 일지가 보여요. 홈에 올리면 진짜 기록이 나와요.';
+    } else if (canEdit && useRemote){
+      notice.hidden = false;
+      notice.textContent = '편집 모드예요. 여기서 쓰거나 고친 내용은 새로고침하면 사라지니, ‘data.json 받기’로 내려받아 저장소의 data.json에 덮어써 주세요.';
+    }
+  }
+  window.addEventListener('hashchange', () => { applyEditMode(); if (currentId) openReader(currentId); else showList(); });
+
+  /* ---------- 배경 ---------- */
+  if (LOG.background){
+    const b = $('bgfix');
+    b.style.backgroundImage = 'url("' + String(LOG.background).replace(/["\\]/g, '') + '")';
+    b.classList.add('has-img');
+  }
+
+  /* ---------- 전체 txt 백업 ---------- */
+  function plainTurn(t){
+    let out = '';
+    if (t.user && t.user.trim()) out += '[' + (LOG.me || '나') + ']\n' + t.user.trim() + '\n\n';
+    out += String(t.reply || '').trim() + '\n';
+    return out;
+  }
+  $('txtBtn').addEventListener('click', () => {
+    const nums = new Map(); ordered().forEach((e, i) => nums.set(e.id, i + 1));
+    let txt = store.title + '\n' + '내보낸 날: ' + new Date().toLocaleString('ko-KR') + '\n' + ordered().length + '편\n\n';
+    ordered().forEach(e => {
+      const inf = info(e);
+      txt += '==================================================\n'
+        + pad3(nums.get(e.id)) + (e.route ? ' [' + e.route + ']' : '') + (e.voyage ? ' (연속 항해: ' + e.voyage + ')' : '') + '\n'
+        + titleOf(e, inf) + '\n'
+        + [inf.when, inf.place].filter(Boolean).join(' / ') + '\n'
+        + '==================================================\n\n';
+      e.turns.forEach((t, i) => { if (i) txt += '\n- - -\n\n'; txt += plainTurn(t); });
+      txt += '\n\n';
+    });
+    const d = new Date();
+    const stamp = d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
+    const blob = new Blob(['\ufeff' + txt], { type:'text/plain;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = '항해일지-전체-' + stamp + '.txt';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    toast('전체 기록을 txt로 받았어요');
+  });
+
+  /* ---------- 항로 설정 ---------- */
+  const NEW_ROUTE = '\u0000new';
+  function mateRow(m){
+    m = m || { name:'', note:'' };
+    const row = el('div', 'mate-row');
+    const n = el('input'); n.type = 'text'; n.className = 'mn'; n.placeholder = '이름'; n.value = m.name; n.setAttribute('aria-label', '선원 이름');
+    const t = el('input'); t.type = 'text'; t.className = 'mt'; t.placeholder = '한마디 (예: 몽화묘)'; t.value = m.note; t.setAttribute('aria-label', '선원 설명');
+    const x = el('button', 'btn danger', '빼기'); x.type = 'button';
+    x.addEventListener('click', () => row.remove());
+    row.append(n, t, x);
+    $('cfgCrew').appendChild(row);
+    return n;
+  }
+  function fillCfg(name){
+    const isNew = name === NEW_ROUTE;
+    $('cfgNewWrap').hidden = !isNew;
+    const r = (!isNew && store.routes[name]) || { guide:'', kicker:'', destination:'', crew:[] };
+    $('cfgNew').value = '';
+    $('cfgGuide').value = r.guide; $('cfgKicker').value = r.kicker; $('cfgDest').value = r.destination;
+    $('cfgGuide').placeholder = '비우면 ' + (LOG.guide || '-');
+    $('cfgDest').placeholder = '비우면 ' + (LOG.destination || '기본 목적지');
+    $('cfgCrew').replaceChildren();
+    r.crew.forEach(m => mateRow(m));
+  }
+  function openCfg(){
+    const names = [...new Set(store.entries.map(e => e.route).filter(Boolean).concat(Object.keys(store.routes)))]
+      .sort((a, b) => a.localeCompare(b, 'ko'));
+    const sel = $('cfgRoute'); sel.replaceChildren();
+    names.forEach(n => { const o = document.createElement('option'); o.value = n; o.textContent = n; sel.appendChild(o); });
+    const o = document.createElement('option'); o.value = NEW_ROUTE; o.textContent = '+ 새 항로'; sel.appendChild(o);
+    sel.value = (routeFilter && names.includes(routeFilter)) ? routeFilter : (names[0] || NEW_ROUTE);
+    fillCfg(sel.value);
+    lastFocus = document.activeElement;
+    $('cfgSheet').hidden = false;
+    sel.focus();
+  }
+  function closeCfg(){ $('cfgSheet').hidden = true; if (lastFocus) lastFocus.focus(); }
+  $('routeCfgBtn').addEventListener('click', openCfg);
+  $('cfgRoute').addEventListener('change', ev => fillCfg(ev.target.value));
+  $('cfgAddMate').addEventListener('click', () => mateRow().focus());
+  $('cfgCancel').addEventListener('click', closeCfg);
+  $('cfgSheet').addEventListener('click', ev => { if (ev.target === $('cfgSheet')) closeCfg(); });
+  document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && !$('cfgSheet').hidden) closeCfg(); });
+  $('cfgSave').addEventListener('click', () => {
+    let name = $('cfgRoute').value;
+    if (name === NEW_ROUTE){
+      name = $('cfgNew').value.trim();
+      if (!name){ alert('새 항로 이름을 적어주세요.'); $('cfgNew').focus(); return; }
+    }
+    const crew = [...$('cfgCrew').children].map(r => ({ name:r.querySelector('.mn').value.trim(), note:r.querySelector('.mt').value.trim() })).filter(m => m.name);
+    const v = { guide:$('cfgGuide').value.trim(), kicker:$('cfgKicker').value.trim(), destination:$('cfgDest').value.trim(), crew };
+    if (!v.guide && !v.kicker && !v.destination && !crew.length) delete store.routes[name];
+    else store.routes[name] = v;
+    persist('‘' + name + '’ 항로 설정을 저장했어요');
+    closeCfg();
+    showList();
+  });
+
+  $('renameBtn').addEventListener('click', () => {
+    const t = prompt('항해일지 제목', store.title);
+    if (t == null || !t.trim()) return;
+    store.title = t.trim();
+    persist('제목을 바꿨어요');
+    renderHero();
+  });
+  $('backBtn').addEventListener('click', showList);
+  $('orderBtn').addEventListener('click', () => { newestFirst = !newestFirst; renderList(); });
+  $('search').addEventListener('input', renderList);
+
+  $('exportBtn').addEventListener('click', () => {
+    const d = new Date();
+    const stamp = d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
+    const blob = new Blob([JSON.stringify(store, null, 2)], { type:'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = useRemote ? 'data.json' : '항해일지-' + stamp + '.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  });
+  $('importBtn').addEventListener('click', () => $('importFile').click());
+  $('importFile').addEventListener('change', ev => {
+    const f = ev.target.files && ev.target.files[0];
+    ev.target.value = '';
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = () => {
+      let o;
+      try{ o = JSON.parse(r.result); }catch(e){ alert('항해일지 백업 파일(.json)이 아니에요.'); return; }
+      if (!o || !Array.isArray(o.entries)){ alert('항해일지 백업 파일(.json)이 아니에요.'); return; }
+      const have = new Set(store.entries.map(x => x.id));
+      const add = cleanAll(o.entries).filter(x => !have.has(x.id)).map(x => { if (!x.added) x.added = Date.now(); return x; });
+      if (!add.length){ alert('새로 더할 일지가 없어요. 이미 다 들어 있어요.'); return; }
+      if (!confirm('백업에서 ' + add.length + '편의 일지를 지금 기록에 더할까요?')) return;
+      store.entries = store.entries.concat(add);
+      const inc = cleanRoutes(o.routes);
+      Object.keys(inc).forEach(k => { if (!store.routes[k]) store.routes[k] = inc[k]; });
+      if (store.title === DEFAULT_TITLE && o.title) store.title = String(o.title);
+      persist(add.length + '편을 불러왔어요');
+      showList();
+    };
+    r.readAsText(f, 'utf-8');
+  });
+
+  /* ---------- 시작 ---------- */
+  if (useRemote) $('exportBtn').textContent = 'data.json 받기';
+  applyEditMode();
+  showList();
+  if (useRemote) loadRemote(); else applyUrl();
+})();
+</script>
+</body>
+</html>
