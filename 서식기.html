@@ -139,9 +139,15 @@
         <div><label class="f" for="fDest">목적지</label><input type="text" id="fDest" placeholder="예: 영원의 너머, 두 사람만의 우주"></div>
       </div>
       <div><label class="f" for="fTags">태그</label><input type="text" id="fTags" placeholder="쉼표로 나눠요. 예: 재훈희영, 구미호AU"></div>
+      <div class="two">
+        <div><label class="f" for="fYt">BGM 유튜브 주소</label><input type="text" id="fYt" placeholder="https://youtu.be/…"></div>
+        <div><label class="f" for="fCover">대표 그림</label><input type="text" id="fCover" placeholder="그림 주소 | 설명"></div>
+      </div>
 
       <div class="stack" id="turns"></div>
       <div><button class="btn" id="addTurn" type="button">턴 추가</button></div>
+      <div><label class="f" for="fGallery">맨 아래 모아보기 삽화</label><textarea id="fGallery" rows="2" placeholder="한 줄에 하나씩: 그림 주소 | 설명"></textarea>
+        <p class="hint">그림 주소는 https://로 시작하는 공개된 주소여야 블로그에서도 보여요. 설명은 | 뒤에 적고, 없으면 생략해도 돼요.</p></div>
       <p class="hint" style="margin:0">*별표* 줄은 서술, 그 밖의 줄은 대사가 돼요. 답변 맨 아래 --- 뒤의 [ ] 줄은 일시·장소·속마음·수치로, *곡명 - 가수* 줄은 BGM으로 정리돼요.</p>
 
       <h2 class="sec">꾸미기</h2>
@@ -377,6 +383,76 @@
     }
     return bars;
   }
+  /* ---------- 삽화와 유튜브 ----------
+     그림은 한 줄에 하나씩 "주소 | 설명". 주소는 https://… 이거나, 홈에서는 저장소 안의 파일 이름(img/a.jpg)도 된다. */
+  function safeSrc(s){
+    s = String(s || '').trim();
+    if (/^https?:\/\//i.test(s)) return s;
+    if (s && !s.startsWith('//') && /^[^:\s<>"']+$/.test(s)) return s;   // 같은 저장소 안의 파일
+    return '';
+  }
+  function toImgs(v){
+    if (Array.isArray(v)) return v.map(x => ({ src:safeSrc(x && x.src), cap:String((x && x.cap) || '').trim() })).filter(x => x.src);
+    return String(v || '').split('\n').map(l => {
+      const i = l.indexOf('|');
+      const src = i < 0 ? l : l.slice(0, i), cap = i < 0 ? '' : l.slice(i + 1);
+      return { src:safeSrc(src), cap:cap.trim() };
+    }).filter(x => x.src);
+  }
+  function ytId(url){
+    const s = String(url || '').trim();
+    if (!s) return '';
+    let m = s.match(/(?:youtu\.be\/|youtube\.com\/(?:shorts\/|embed\/|live\/)|[?&]v=)([\w-]{11})/);
+    if (!m && /^[\w-]{11}$/.test(s)) m = [s, s];
+    return m ? m[1] : '';
+  }
+  const IMG_LABEL = { letter:'함께 넣은 사진', log:'첨부 사진', score:'삽화', vow:'기념 사진' };
+  const YT_LABEL = { letter:'지금 흐르는 곡', log:'♪ 함내 방송', score:'오늘의 연주곡', vow:'함께 들은 곡' };
+  function capH(cap, P, kind){
+    if (!cap) return '';
+    const font = kind === 'letter' ? `font-family:${HD()};font-size:19px;` : kind === 'score' || kind === 'vow' ? `font-family:${SR()};font-style:italic;font-size:13px;` : `font-family:${SN()};font-size:12px;`;
+    return `<div style="margin-top:6px;text-align:center;${font}color:${P.muted};line-height:1.4;">${esc(cap)}</div>`;
+  }
+  function imgTag(img, radius){
+    return `<img src="${esc(img.src)}" alt="${esc(img.cap || '삽화')}" loading="lazy" style="display:block;max-width:100%;height:auto;margin:0 auto;border:0;border-radius:${radius}px;">`;
+  }
+  function imgH(img, P, kind){
+    if (kind === 'letter'){
+      return `<div style="margin:26px auto;max-width:92%;padding:8px 8px 4px;background:#ffffff;border:1px solid ${P.line};border-radius:3px;">${imgTag(img, 2)}${capH(img.cap, P, kind)}</div>`;
+    }
+    if (kind === 'log'){
+      return `<div style="margin:24px 0;padding:8px;border:1px solid ${P.line};border-radius:10px;background:${P.tint};">${imgTag(img, 6)}${capH(img.cap, P, kind)}</div>`;
+    }
+    return `<div style="margin:26px 0;">${imgTag(img, 4)}${capH(img.cap, P, kind)}</div>`;
+  }
+  function coverH(data, P, kind){
+    const c = toImgs(data.cover)[0];
+    if (!c) return '';
+    return `<div style="margin:0 0 26px;">${imgTag(c, kind === 'letter' ? 3 : 8)}${capH(c.cap, P, kind)}</div>`;
+  }
+  function turnImgsH(t, P, kind){ return toImgs(t.images).map(img => imgH(img, P, kind)).join(''); }
+  function galleryH(data, P, kind){
+    const g = toImgs(data.gallery);
+    if (!g.length) return '';
+    const w = g.length === 1 ? '100%' : '48%';
+    return `<div style="margin:30px 0 0;padding-top:16px;border-top:1px solid ${P.line};">`
+      + `<div style="font-family:${SN()};font-size:12px;color:${P.accent};margin:0 0 10px;">${IMG_LABEL[kind] || '삽화'}</div>`
+      + `<div style="font-size:0;line-height:0;">`
+      + g.map(img => `<div style="display:inline-block;width:${w};margin:0 1% 12px;vertical-align:top;font-size:16px;line-height:1.6;">${imgTag(img, 6)}${capH(img.cap, P, kind)}</div>`).join('')
+      + `</div></div>`;
+  }
+  function ytCard(data, bgm, P, kind){
+    const id = ytId(data.yt);
+    const url = 'https://www.youtube.com/watch?v=' + id;
+    return `<table data-yt="${id}" style="width:100%;${T0}margin-top:28px;background:${P.tint};border-radius:12px;"><tr>`
+      + `<td style="width:132px;padding:12px 0 12px 12px;border:0;vertical-align:middle;">`
+      + `<a href="${url}" target="_blank" rel="noopener" style="display:block;"><img src="https://i.ytimg.com/vi/${id}/mqdefault.jpg" alt="${esc(bgm || 'BGM')} 영상" style="display:block;width:120px;max-width:100%;height:auto;border:0;border-radius:6px;"></a></td>`
+      + `<td style="padding:12px 14px;border:0;vertical-align:middle;font-family:${SN()};line-height:1.5;">`
+      + `<div style="font-size:12px;color:${P.accent};">${YT_LABEL[kind] || 'BGM'}</div>`
+      + `<div style="font-size:14px;color:${P.ink};margin:2px 0 4px;">${esc(bgm || '유튜브에서 듣기')}</div>`
+      + `<a href="${url}" target="_blank" rel="noopener" style="font-size:12px;color:${P.muted};text-decoration:underline;">유튜브에서 듣기 ↗</a></td></tr></table>`;
+  }
+
   const ROMAN = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
 
   function prep(data, o){
@@ -415,9 +491,11 @@
         + `<div style="font-size:11px;">${esc(dm[1])}</div><div style="font-size:17px;font-weight:700;">${esc(dm[2].padStart(2,'0') + '.' + dm[3].padStart(2,'0'))}</div></div></td>`;
     }
     h += `</tr></table><div style="height:1px;background:${P.line};margin:20px 0 26px;"></div>`;
+    h += coverH(data, P, o.style);
     parsed.forEach((x, i) => {
       if (i > 0) h += `<div style="text-align:center;color:${P.accent};margin:26px 0;font-size:14px;letter-spacing:.6em;padding-left:.6em;">❀ ❀ ❀</div>`;
       h += userBlock(x.t, o, P, 'letter') + prose(x.body, P, SAY.letter(P, false));
+      h += turnImgsH(x.t, P, o.style);
       if (multi && i > 0) h += situ(x.meta, P, '— ');
       const heart = o.heart && x.meta.heart, stats = o.stats ? x.meta.stats : [];
       if (heart || stats.length){
@@ -432,13 +510,14 @@
         h += `</div>`;
       }
     });
-    if (o.bgm && bgm){
+    if (o.bgm && ytId(data.yt)) h += ytCard(data, bgm, P, o.style);
+    else if (o.bgm && bgm){
       h += `<table style="width:100%;${T0}margin-top:28px;background:${P.tint};border-radius:12px;"><tr>`
         + `<td style="width:46px;padding:12px 0 12px 14px;border:0;vertical-align:middle;"><div style="width:30px;height:30px;border-radius:50%;background:${P.accent};color:${P.paper};text-align:center;line-height:30px;font-size:11px;">▶</div></td>`
         + `<td style="padding:12px 14px 12px 4px;border:0;vertical-align:middle;font-family:${SN()};"><div style="font-size:13px;color:${P.ink};">${esc(bgm)}</div>`
         + `<div style="height:2px;margin-top:6px;background:${P.bar};border-radius:2px;"><div style="width:38%;height:2px;background:${P.accent};border-radius:2px;"></div></div></td></tr></table>`;
     }
-    return h + tagsH(data, P) + `</div>`;
+    return h + galleryH(data, P, o.style) + tagsH(data, P) + `</div>`;
   }
 
   /* ===== 항해일지 ===== */
@@ -462,9 +541,11 @@
         + `<td style="width:16px;${TD}font-family:${SR()};font-size:18px;line-height:1;color:${P.accent};text-align:right;">∞</td></tr></table></td></tr>`;
     }
     h += `</table>`;
+    h += coverH(data, P, o.style);
     parsed.forEach((x, i) => {
       if (i > 0) h += `<div style="text-align:center;color:${P.muted};margin:26px 0;letter-spacing:.8em;padding-left:.8em;">✧ ✧ ✧</div>`;
       h += userBlock(x.t, o, P, 'log') + prose(x.body, P, SAY.log(P));
+      h += turnImgsH(x.t, P, o.style);
       if (multi && i > 0) h += situ(x.meta, P, `<span style="color:${P.accent};">상황</span>&nbsp; `);
       const heart = o.heart && x.meta.heart, stats = o.stats ? x.meta.stats : [];
       if (heart || stats.length){
@@ -476,8 +557,9 @@
         h += `</div>`;
       }
     });
-    if (o.bgm && bgm) h += `<div style="display:inline-block;margin-top:20px;padding:5px 12px;border:1px solid ${P.line};border-radius:12px;font-family:${SN()};font-size:13px;line-height:1.6;"><span style="color:${P.accent};">♪ 함내 방송</span>&nbsp; ${esc(bgm)}</div>`;
-    h += tagsH(data, P);
+    if (o.bgm && ytId(data.yt)) h += ytCard(data, bgm, P, o.style);
+    else if (o.bgm && bgm) h += `<div style="display:inline-block;margin-top:20px;padding:5px 12px;border:1px solid ${P.line};border-radius:12px;font-family:${SN()};font-size:13px;line-height:1.6;"><span style="color:${P.accent};">♪ 함내 방송</span>&nbsp; ${esc(bgm)}</div>`;
+    h += galleryH(data, P, o.style) + tagsH(data, P);
     const sign = [data.ship ? data.ship + ' 항해일지' : '', data.captain ? '함장 ' + data.captain : ''].filter(Boolean).join(', ');
     if (sign) h += `<div style="margin-top:22px;text-align:right;font-family:${SN()};font-size:12px;color:${P.muted};">${esc(sign)}</div>`;
     return h + `</div>`;
@@ -502,10 +584,12 @@
     const sub = [when, place].filter(Boolean).join(', ');
     if (sub) h += `<div style="text-align:right;font-family:${SN()};font-size:12px;color:${P.muted};margin-top:14px;">${esc(sub)}</div>`;
     h += staff() + `<div style="height:18px;"></div>`;
+    h += coverH(data, P, o.style);
     parsed.forEach((x, i) => {
       if (multi) h += `<div style="font-family:${SR()};font-weight:700;font-size:15px;color:${P.accent};margin:${i ? 34 : 0}px 0 12px;">${ROMAN[i] || i + 1}.</div>`;
       if (multi && i > 0) h += situ(x.meta, P);
       h += userBlock(x.t, o, P, 'score') + prose(x.body, P, SAY.score(P));
+      h += turnImgsH(x.t, P, o.style);
       const heart = o.heart && x.meta.heart, stats = o.stats ? x.meta.stats : [];
       if (heart || stats.length){
         h += `<div style="margin:30px 0 0;">`
@@ -515,8 +599,9 @@
         h += `</div>`;
       }
     });
-    if (o.bgm && bgm) h += `<div style="margin-top:26px;padding-top:12px;border-top:1px solid ${P.line};font-family:${SN()};font-size:13px;"><span style="color:${P.accent};">오늘의 연주곡</span>&nbsp; ${esc(bgm)}</div>`;
-    h += tagsH(data, P);
+    if (o.bgm && ytId(data.yt)) h += ytCard(data, bgm, P, o.style);
+    else if (o.bgm && bgm) h += `<div style="margin-top:26px;padding-top:12px;border-top:1px solid ${P.line};font-family:${SN()};font-size:13px;"><span style="color:${P.accent};">오늘의 연주곡</span>&nbsp; ${esc(bgm)}</div>`;
+    h += galleryH(data, P, o.style) + tagsH(data, P);
     h += `<div style="margin-top:18px;text-align:right;font-family:${SR()};font-style:italic;font-size:13px;color:${P.muted};">fine.</div>`;
     return h + `</div>`;
   }
@@ -534,10 +619,12 @@
     const sub = [when, place ? place + '에서' : ''].filter(Boolean).join(', ');
     if (sub) h += `<div style="text-align:center;font-family:${SN()};font-size:12px;color:${P.muted};">${esc(sub)}</div>`;
     h += `<div style="text-align:center;color:${P.accent};margin:16px 0 24px;font-size:14px;">— ❦ —</div>`;
+    h += coverH(data, P, o.style);
     parsed.forEach((x, i) => {
       if (i > 0) h += `<div style="text-align:center;color:${P.accent};margin:24px 0;font-size:13px;">❦</div>`;
       if (multi && i > 0) h += situ(x.meta, P);
       h += userBlock(x.t, o, P, 'vow') + prose(x.body, P, SAY.vow(P));
+      h += turnImgsH(x.t, P, o.style);
       const heart = o.heart && x.meta.heart, stats = o.stats ? x.meta.stats : [];
       if (heart){
         h += `<div style="margin:28px 6px 0;padding:18px 16px;background:${P.tint};border-radius:8px;text-align:center;">`
@@ -546,7 +633,8 @@
       }
       if (stats.length){ h += `<div style="margin:20px 6px 0;">`; stats.forEach(s => h += stat(s, P)); h += `</div>`; }
     });
-    if (o.bgm && bgm) h += `<div style="text-align:center;margin-top:24px;font-family:${SN()};font-size:13px;color:${P.muted};">함께 들은 곡&nbsp; <span style="color:${P.ink};">${esc(bgm)}</span></div>`;
+    if (o.bgm && ytId(data.yt)) h += ytCard(data, bgm, P, o.style);
+    else if (o.bgm && bgm) h += `<div style="text-align:center;margin-top:24px;font-family:${SN()};font-size:13px;color:${P.muted};">함께 들은 곡&nbsp; <span style="color:${P.ink};">${esc(bgm)}</span></div>`;
     if (duet.length){
       const seal = n => `<td style="${TD}padding:0 10px;text-align:center;vertical-align:bottom;">`
         + `<div style="display:inline-block;width:38px;height:38px;border:1.5px solid ${P.accent};border-radius:50%;line-height:36px;text-align:center;font-family:${SR()};font-weight:700;font-size:15px;color:${P.accent};">${esc(n.slice(0, 1))}</div>`
@@ -554,7 +642,7 @@
       h += `<table style="${T0}margin:30px auto 0;"><tr>${duet.map(seal).join('')}</tr></table>`;
       if (dm) h += `<div style="text-align:center;font-family:${SN()};font-size:12px;color:${P.muted};margin-top:10px;">${esc(dm[1] + '년 ' + Number(dm[2]) + '월 ' + Number(dm[3]) + '일')}</div>`;
     }
-    h += tagsH(data, P, true);
+    h += galleryH(data, P, o.style) + tagsH(data, P, true);
     return h + `</div></div>`;
   }
 
@@ -584,9 +672,11 @@
     const d = document.createElement('div'); d.className = 'turn';
     d.innerHTML = `<div class="turn-head"><b></b><button class="btn small danger" type="button">이 턴 빼기</button></div>
       <div><label class="f" for="u${n}">내가 보낸 메시지 (선택)</label><textarea class="tu" id="u${n}" rows="3"></textarea></div>
-      <div><label class="f" for="a${n}">AI 답변</label><textarea class="ta" id="a${n}" rows="9"></textarea></div>`;
+      <div><label class="f" for="a${n}">AI 답변</label><textarea class="ta" id="a${n}" rows="9"></textarea></div>
+      <div><label class="f" for="i${n}">이 턴 아래 삽화 (선택)</label><textarea class="ti" id="i${n}" rows="1" placeholder="그림 주소 | 설명"></textarea></div>`;
     d.querySelector('.tu').value = t.user || '';
     d.querySelector('.ta').value = t.reply || '';
+    d.querySelector('.ti').value = Array.isArray(t.images) ? t.images.map(x => x.src + (x.cap ? ' | ' + x.cap : '')).join('\n') : (t.images || '');
     d.querySelector('.turn-head .btn').addEventListener('click', () => { d.remove(); renumber(); update(); });
     $('turns').appendChild(d);
     renumber();
@@ -599,11 +689,11 @@
       d.querySelector('.turn-head .btn').hidden = all.length === 1;
     });
   }
-  const FIELDS = { eyebrow:'fEyebrow', title:'fTitle', when:'fWhen', place:'fPlace', me:'fMe', partner:'fPartner', ship:'fShip', captain:'fCaptain', no:'fNo', dest:'fDest', tags:'fTags' };
+  const FIELDS = { eyebrow:'fEyebrow', title:'fTitle', when:'fWhen', place:'fPlace', me:'fMe', partner:'fPartner', ship:'fShip', captain:'fCaptain', no:'fNo', dest:'fDest', tags:'fTags', yt:'fYt', cover:'fCover', gallery:'fGallery' };
   function read(){
     const data = {};
     Object.keys(FIELDS).forEach(k => data[k] = $(FIELDS[k]).value.trim());
-    data.turns = [...$('turns').children].map(d => ({ user:d.querySelector('.tu').value, reply:d.querySelector('.ta').value }))
+    data.turns = [...$('turns').children].map(d => ({ user:d.querySelector('.tu').value, reply:d.querySelector('.ta').value, images:d.querySelector('.ti').value }))
       .filter(t => t.user.trim() || t.reply.trim());
     if (!data.turns.length) data.turns = [{ user:'', reply:'' }];
     return data;
@@ -727,7 +817,7 @@
       try{ await document.fonts.ready; }catch(e){}
       const h = box.offsetHeight || 1000;
       const scale = Math.max(1, Math.min(2, 15000 / h, Math.sqrt(16000000 / (640 * h))));
-      const canvas = await html2canvas(box, { scale, backgroundColor:null, logging:false });
+      const canvas = await html2canvas(box, { scale, backgroundColor:null, logging:false, useCORS:true });
       $('imgPng').src = canvas.toDataURL('image/png');
       $('imgOut').hidden = false;
       $('imgHint').textContent = '컴퓨터에서는 이미지를 오른쪽 클릭해 ‘이미지를 다른 이름으로 저장’을, 휴대폰에서는 이미지를 길게 눌러 저장하세요. 그다음 게시판에 사진으로 올리면 돼요.'
