@@ -7,7 +7,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Nanum+Pen+Script&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Nanum+Pen+Script&family=Nanum+Brush+Script&family=Do+Hyeon&display=swap" rel="stylesheet">
 <style>
   html,body{ margin:0; }
   [hidden]{ display:none !important; }
@@ -63,7 +63,7 @@
   .check{ display:flex; gap:8px; align-items:center; font-size:.86rem; cursor:pointer; }
   .check input{ width:16px; height:16px; margin:0; accent-color:var(--accent); }
 
-  .swatches{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
+  .swatches{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
   @media (max-width:480px){ .swatches{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
   .sw{ border:1px solid var(--line); background:var(--field); border-radius:12px; padding:8px; text-align:left; display:flex; flex-direction:column; gap:6px; }
   .sw[aria-pressed="true"]{ border-color:var(--accent); box-shadow:0 0 0 1px var(--accent); }
@@ -74,7 +74,7 @@
   .seg button{ border:0; background:transparent; padding:5px 12px; font-size:.82rem; color:var(--muted); }
   .seg button[aria-pressed="true"]{ background:var(--accent); color:var(--on-accent); }
   .opts{ display:flex; flex-wrap:wrap; gap:8px 16px; }
-  .styles{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
+  .styles{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
   @media (max-width:520px){ .styles{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
   .st{ border:1px solid var(--line); background:var(--field); border-radius:12px; padding:10px 10px 9px; text-align:left; display:flex; flex-direction:column; gap:2px; min-width:0; }
   .st b{ font-family:var(--display); font-size:.98rem; }
@@ -212,14 +212,18 @@
     { id:'blossom', name:'벚꽃 편지', paper:'#fdf7f8', ink:'#3a2a31', muted:'#8a7279', line:'#eed9df', accent:'#c65b7c', tint:'#f7e6ec', tint2:'#efe8f4', bar:'#ead3db', warn:'#b8323f' },
     { id:'night',   name:'밤 항해',   paper:'#1b2132', ink:'#e8ecf4', muted:'#9aa4ba', line:'#333d58', accent:'#e5bf6a', tint:'#262f47', tint2:'#2f2a45', bar:'#3a4462', warn:'#ff8fa3' },
     { id:'mist',    name:'해무',      paper:'#f2f7f6', ink:'#203538', muted:'#6b8487', line:'#cfe1de', accent:'#2c8580', tint:'#dfeeec', tint2:'#e6ecf5', bar:'#c5dcd8', warn:'#c0453a' },
+    { id:'jade',    name:'비취 누각', paper:'#10211c', ink:'#ebf0e6', muted:'#94aa9f', line:'#2d4a40', accent:'#d9b25a', tint:'#172e27', tint2:'#1d2d33', bar:'#284036', warn:'#e9826b' },
+    { id:'hanji',   name:'한지 서책', paper:'#f4efe4', ink:'#2b2622', muted:'#81776b', line:'#ddd2bf', accent:'#9e2b25', tint:'#ebe3d3', tint2:'#efe6dc', bar:'#d8cdb9', warn:'#9e2b25' },
     { id:'ink',     name:'먹과 인주', paper:'#f8f7f4', ink:'#222020', muted:'#7a7570', line:'#dedad2', accent:'#b03a2e', tint:'#eeece6', tint2:'#f4ece5', bar:'#dcd8cf', warn:'#b03a2e' }
   ];
   const FONTS = {
     serif:"'Gowun Batang','Noto Serif KR','Nanum Myeongjo','Batang',serif",
     sans:"'Gowun Dodum','Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif",
-    hand:"'Nanum Pen Script','Gowun Batang',cursive"
+    hand:"'Nanum Pen Script','Gowun Batang',cursive",
+    brush:"'Nanum Brush Script','Gowun Batang',serif",
+    game:"'Do Hyeon','Gowun Dodum','Apple SD Gothic Neo',sans-serif"
   };
-  const FONT_LINK = '<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Nanum+Pen+Script&display=swap" rel="stylesheet">';
+  const FONT_LINK = '<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Nanum+Pen+Script&family=Nanum+Brush+Script&family=Do+Hyeon&display=swap" rel="stylesheet">';
 
   /* ---------- 예시 ---------- */
   const SAMPLE = {
@@ -307,7 +311,7 @@
 
   /* ---------- 코드 만들기 (모든 꾸밈은 style 속성 안에) ---------- */
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[ch]));
-  const SN = () => FONTS.sans, SR = () => FONTS.serif, HD = () => FONTS.hand;
+  const SN = () => FONTS.sans, SR = () => FONTS.serif, HD = () => FONTS.hand, BR = () => FONTS.brush, GM = () => FONTS.game;
   const T0 = 'border-collapse:collapse;border:0;margin:0;';
   const TD = 'padding:0;border:0;';
 
@@ -331,7 +335,9 @@
     letter:(P, user) => s => `<p style="margin:0 0 1em;"><span style="display:inline-block;max-width:100%;padding:3px 13px;background:${user ? P.paper : P.tint};border-radius:4px 14px 14px 14px;">${s}</span></p>`,
     log:(P) => s => `<p style="margin:0 0 1em;padding-left:.85em;border-left:2px solid ${P.accent};">${s}</p>`,
     score:(P) => s => `<p style="margin:0 0 1em;padding-left:1.5em;text-indent:-1.5em;"><span style="display:inline-block;width:1.5em;text-indent:0;color:${P.accent};">♪</span>${s}</p>`,
-    vow:(P) => s => `<p style="margin:0 0 1em;padding:0 .4em;"><span style="color:${P.accent};font-family:${SR()};">“</span>${s}<span style="color:${P.accent};font-family:${SR()};">”</span></p>`
+    vow:(P) => s => `<p style="margin:0 0 1em;padding:0 .4em;"><span style="color:${P.accent};font-family:${SR()};">“</span>${s}<span style="color:${P.accent};font-family:${SR()};">”</span></p>`,
+    wuxia:(P) => s => `<p style="margin:0 0 1em;"><span style="color:${P.accent};">「</span>${s}<span style="color:${P.accent};">」</span></p>`,
+    game:(P) => s => `<div style="margin:0 0 1em;padding:9px 30px 9px 14px;background:${P.tint};border:1px solid ${P.line};border-left:3px solid ${P.accent};border-radius:4px;position:relative;">${s}<span style="position:absolute;right:10px;bottom:6px;font-size:10px;color:${P.accent};">▼</span></div>`
   };
 
   function stat(s, P, opt){
@@ -406,8 +412,8 @@
     if (!m && /^[\w-]{11}$/.test(s)) m = [s, s];
     return m ? m[1] : '';
   }
-  const IMG_LABEL = { letter:'함께 넣은 사진', log:'첨부 사진', score:'삽화', vow:'기념 사진' };
-  const YT_LABEL = { letter:'지금 흐르는 곡', log:'♪ 함내 방송', score:'오늘의 연주곡', vow:'함께 들은 곡' };
+  const IMG_LABEL = { letter:'함께 넣은 사진', log:'첨부 사진', score:'삽화', vow:'기념 사진', wuxia:'화첩(畵帖)', game:'획득한 일러스트' };
+  const YT_LABEL = { letter:'지금 흐르는 곡', log:'♪ 함내 방송', score:'오늘의 연주곡', vow:'함께 들은 곡', wuxia:'風流, 오늘의 곡', game:'BGM ▶' };
   function capH(cap, P, kind){
     if (!cap) return '';
     const font = kind === 'letter' ? `font-family:${HD()};font-size:19px;` : kind === 'score' || kind === 'vow' ? `font-family:${SR()};font-style:italic;font-size:13px;` : `font-family:${SN()};font-size:12px;`;
@@ -646,7 +652,90 @@
     return h + `</div></div>`;
   }
 
-  const BUILDERS = { letter:buildLetter, log:buildLog, score:buildScore, vow:buildVow };
+  /* ===== 무협 (무림에서 온 희영) ===== */
+  const HAN = ['一','二','三','四','五','六','七','八','九','十'];
+  const hanNum = n => n <= 10 ? HAN[n - 1] : n <= 19 ? '十' + HAN[n - 11] : n <= 99 ? HAN[Math.floor(n / 10) - 1] + '十' + (n % 10 ? HAN[n % 10 - 1] : '') : String(n);
+  function buildWuxia(data, o){
+    const { P, parsed, when, place, title, dm, bgm, body, multi } = prep(data, o);
+    const rod = `<div style="height:10px;margin:0 -14px;background:${P.ink};border-radius:5px;opacity:.85;"></div>`;
+    let h = shell(o, P, body, `padding:0 26px;border-left:1px solid ${P.line};border-right:1px solid ${P.line};`);
+    h += rod + `<div style="padding:28px 0 6px;">`;
+    h += `<div style="font-family:${SR()};font-size:12px;letter-spacing:.4em;color:${P.accent};">武林錄${data.eyebrow ? `<span style="letter-spacing:0;color:${P.muted};">&nbsp;&nbsp;${esc(data.eyebrow)}</span>` : ''}</div>`;
+    h += `<table style="width:100%;${T0}margin-top:10px;"><tr><td style="${TD}vertical-align:middle;">`
+      + (title ? `<div style="font-family:${BR()};font-size:32px;line-height:1.25;">${esc(title)}</div>` : '')
+      + `</td><td style="width:56px;${TD}padding-left:12px;vertical-align:middle;text-align:right;">`
+      + `<div style="display:inline-block;width:44px;height:44px;border:2px solid ${P.accent};border-radius:4px;color:${P.accent};font-family:${SR()};font-weight:700;font-size:20px;line-height:40px;text-align:center;">錄</div></td></tr></table>`;
+    const day = dm ? `${dm[1]}년 ${Number(dm[2])}월 ${Number(dm[3])}일` : when;
+    const sub = [day, place].filter(Boolean).join(', ');
+    if (sub) h += `<div style="font-family:${SR()};font-size:13px;color:${P.muted};margin-top:6px;">— ${esc(sub)}</div>`;
+    h += `<div style="height:1px;background:${P.ink};opacity:.25;margin:20px 0 24px;"></div>`;
+    h += coverH(data, P, o.style);
+    parsed.forEach((x, i) => {
+      if (multi) h += `<div style="text-align:center;font-family:${SR()};font-weight:700;font-size:15px;letter-spacing:.3em;color:${P.accent};margin:${i ? 34 : 0}px 0 16px;">第${hanNum(i + 1)}回</div>`;
+      if (multi && i > 0) h += situ(x.meta, P);
+      h += userBlock(x.t, o, P, 'wuxia') + prose(x.body, P, SAY.wuxia(P));
+      h += turnImgsH(x.t, P, o.style);
+      const heart = o.heart && x.meta.heart, stats = o.stats ? x.meta.stats : [];
+      if (heart){
+        h += `<div style="margin:28px 0 0;padding:4px 0 4px 16px;border-left:3px solid ${P.accent};">`
+          + `<div style="font-family:${SR()};font-size:12px;letter-spacing:.2em;color:${P.accent};">心中之言</div>`
+          + `<div style="font-family:${BR()};font-size:27px;line-height:1.35;color:${P.ink};margin-top:2px;">${esc(x.meta.heart)}</div></div>`;
+      }
+      if (stats.length){ h += `<div style="margin:20px 0 0;">`; stats.forEach(s => h += stat(s, P, { warn:true })); h += `</div>`; }
+    });
+    if (o.bgm && ytId(data.yt)) h += ytCard(data, bgm, P, o.style);
+    else if (o.bgm && bgm) h += `<div style="margin-top:26px;font-family:${SR()};font-size:13px;color:${P.muted};"><span style="color:${P.accent};">風流</span>&nbsp; ${esc(bgm)}</div>`;
+    h += galleryH(data, P, o.style) + tagsH(data, P);
+    h += `<div style="margin:26px 0 22px;text-align:right;font-family:${SR()};font-size:12px;color:${P.muted};">且聽下回分解</div>`;
+    return h + `</div>` + rod + `</div>`;
+  }
+
+  /* ===== 동양풍 게임 (게임 속에서 튀어나온 구미호 희영) ===== */
+  function buildGame(data, o){
+    const { P, parsed, when, place, title, bgm, body, multi, tm } = prep(data, o);
+    const win = (label, inner, extra) => `<div style="margin:26px 0 0;border:1px solid ${P.accent};border-radius:6px;background:${P.tint};${extra || ''}">`
+      + `<div style="padding:6px 12px;border-bottom:1px solid ${P.line};font-family:${GM()};font-size:13px;color:${P.accent};">${label}</div>`
+      + `<div style="padding:14px 14px 4px;">${inner}</div></div>`;
+    let h = shell(o, P, body, `padding:6px;border:1px solid ${P.accent};border-radius:10px;`);
+    h += `<div style="border:1px solid ${P.line};border-radius:6px;padding:26px 20px 22px;">`;
+    h += `<table style="width:100%;${T0}"><tr><td style="${TD}">`
+      + `<span style="display:inline-block;padding:2px 10px;border:1px solid ${P.accent};border-radius:999px;font-family:${GM()};font-size:12px;color:${P.accent};">퀘스트 기록</span>`
+      + (data.eyebrow ? `<span style="font-family:${SN()};font-size:12px;color:${P.muted};">&nbsp; ${esc(data.eyebrow)}</span>` : '')
+      + `</td></tr></table>`;
+    if (title) h += `<div style="font-family:${GM()};font-size:25px;line-height:1.4;margin:12px 0 10px;">${esc(title)}</div>`;
+    const rows = [['위치', place], ['시간', when]].filter(r => r[1]);
+    const duet = [data.partner, data.me].filter(Boolean);
+    if (duet.length) rows.push(['파티', duet.join('  ♥  ')]);
+    if (rows.length){
+      h += `<table style="width:100%;${T0}margin:0 0 4px;">` + rows.map(([k, v]) =>
+        `<tr><td style="width:44px;${TD}padding:2px 0;font-family:${GM()};font-size:12px;color:${P.accent};vertical-align:top;">${esc(k)}</td><td style="${TD}padding:2px 0;font-family:${SN()};font-size:13px;color:${P.ink};">${esc(v)}</td></tr>`).join('') + `</table>`;
+    }
+    h += `<div style="height:1px;background:${P.line};margin:18px 0 22px;"></div>`;
+    h += coverH(data, P, o.style);
+    parsed.forEach((x, i) => {
+      if (multi) h += `<div style="text-align:center;font-family:${GM()};font-size:14px;color:${P.accent};margin:${i ? 32 : 0}px 0 14px;">─ ${i + 1}장 ─</div>`;
+      if (multi && i > 0) h += situ(x.meta, P);
+      h += userBlock(x.t, o, P, 'game') + prose(x.body, P, SAY.game(P));
+      h += turnImgsH(x.t, P, o.style);
+      const heart = o.heart && x.meta.heart, stats = o.stats ? x.meta.stats : [];
+      if (heart){
+        h += `<div style="margin:26px 0 0;padding:14px 16px;border:1px dashed ${P.accent};border-radius:6px;text-align:center;">`
+          + `<div style="font-family:${GM()};font-size:13px;color:${P.accent};">★ 이벤트 해금: ${esc(x.meta.heartLabel || '속마음')}</div>`
+          + `<div style="font-family:${HD()};font-size:25px;line-height:1.4;color:${P.ink};margin-top:6px;">${esc(x.meta.heart)}</div></div>`;
+      }
+      if (stats.length){
+        let inner = ''; stats.forEach(s => inner += stat(s, P, { warn:true, h:6 }));
+        h += win('상태창', inner);
+      }
+    });
+    if (o.bgm && ytId(data.yt)) h += ytCard(data, bgm, P, o.style);
+    else if (o.bgm && bgm) h += `<div style="margin-top:24px;padding:8px 12px;border:1px solid ${P.line};border-radius:6px;font-family:${SN()};font-size:13px;"><span style="font-family:${GM()};color:${P.accent};">BGM ▶</span>&nbsp; ${esc(bgm)}</div>`;
+    h += galleryH(data, P, o.style) + tagsH(data, P);
+    h += `<div style="margin-top:22px;text-align:center;font-family:${GM()};font-size:12px;color:${P.muted};">— 자동 저장되었습니다 —</div>`;
+    return h + `</div></div>`;
+  }
+
+  const BUILDERS = { letter:buildLetter, log:buildLog, score:buildScore, vow:buildVow, wuxia:buildWuxia, game:buildGame };
   function build(data, o){ return (BUILDERS[o.style] || buildLetter)(data, o); }
 
   const BLANK = {
@@ -752,8 +841,11 @@
     { id:'letter', name:'편지', desc:'말풍선 대사, 날짜 우표, P.S. 속마음' },
     { id:'log',    name:'항해일지', desc:'함선 장부, 목적지 항로, 상태 보고' },
     { id:'score',  name:'악보', desc:'오선과 크레센도, 악장, Coda' },
-    { id:'vow',    name:'서약서', desc:'겹테두리, 두 사람의 서명과 인장' }
+    { id:'vow',    name:'서약서', desc:'겹테두리, 두 사람의 서명과 인장' },
+    { id:'wuxia',  name:'무협', desc:'두루마리 서책, 第一回, 붓글씨 속마음' },
+    { id:'game',   name:'동양풍 게임', desc:'대화창, 상태창, 이벤트 해금' }
   ];
+  const STYLE_PAL = { wuxia:'hanji', game:'jade' };   // 새 서식을 고르면 어울리는 편지지로 바꿔준다
   function renderStyles(){
     const box = $('styles'); box.replaceChildren();
     STYLES.forEach(st => {
@@ -762,7 +854,7 @@
       const n = document.createElement('b'); n.textContent = st.name;
       const d = document.createElement('span'); d.textContent = st.desc;
       b.append(n, d);
-      b.addEventListener('click', () => { state.style = st.id; applyState(); update(); });
+      b.addEventListener('click', () => { state.style = st.id; if (STYLE_PAL[st.id]) state.palette = STYLE_PAL[st.id]; applyState(); update(); });
       box.appendChild(b);
     });
     document.body.classList.toggle('is-log', state.style === 'log');

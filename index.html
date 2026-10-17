@@ -7,7 +7,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Nanum+Pen+Script&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Nanum+Pen+Script&family=Nanum+Brush+Script&family=Do+Hyeon&display=swap" rel="stylesheet">
 <style>
   /* ================================================================
      밤벚꽃 배경에 맞춘 색. 배경을 바꾸면 이 블록만 고치면 돼요.
@@ -549,6 +549,11 @@
     <div>
       <label for="cfgMotto">표지 문구</label>
       <input id="cfgMotto" type="text" placeholder="비우면 가장 최근 속마음이 보여요">
+    </div>
+    <div>
+      <label for="cfgStyle">이 항로의 기본 서식</label>
+      <select id="cfgStyle"></select>
+      <p class="hint">이 항로의 일지를 열면 처음부터 이 서식으로 보여요. 방문자가 다른 서식을 고르면 그쪽이 먼저예요.</p>
       <p class="hint">적어두면 이 항로 표지에 늘 이 문구가 걸려요. 속마음이 없는 방이나, 아끼는 한 줄을 걸어두고 싶을 때 쓰세요.</p>
     </div>
     <fieldset>
@@ -685,6 +690,7 @@
         guide:String(v.guide || '').trim(), kicker:String(v.kicker || '').trim(),
         destination:String(v.destination || '').trim(),
         motto:String(v.motto || '').trim(),
+        style:String(v.style || '').trim(),
         crew:(Array.isArray(v.crew) ? v.crew : []).map(m => ({ name:String((m && m.name) || '').trim(), note:String((m && m.note) || '').trim() })).filter(m => m.name)
       };
     });
@@ -1257,6 +1263,7 @@
     $('readerActs').hidden = !canEdit;
     $('listView').hidden = true;
     $('readerView').hidden = false;
+    readStyle = styleFor(e);
     renderReadBar();
     renderFormatted(e);
     syncUrl();
@@ -1691,17 +1698,21 @@
     { id:'blossom', name:'벚꽃 편지', paper:'#fdf7f8', ink:'#3a2a31', muted:'#8a7279', line:'#eed9df', accent:'#c65b7c', tint:'#f7e6ec', tint2:'#efe8f4', bar:'#ead3db', warn:'#b8323f' },
     { id:'night',   name:'밤 항해',   paper:'#1b2132', ink:'#e8ecf4', muted:'#9aa4ba', line:'#333d58', accent:'#e5bf6a', tint:'#262f47', tint2:'#2f2a45', bar:'#3a4462', warn:'#ff8fa3' },
     { id:'mist',    name:'해무',      paper:'#f2f7f6', ink:'#203538', muted:'#6b8487', line:'#cfe1de', accent:'#2c8580', tint:'#dfeeec', tint2:'#e6ecf5', bar:'#c5dcd8', warn:'#c0453a' },
+    { id:'jade',    name:'비취 누각', paper:'#10211c', ink:'#ebf0e6', muted:'#94aa9f', line:'#2d4a40', accent:'#d9b25a', tint:'#172e27', tint2:'#1d2d33', bar:'#284036', warn:'#e9826b' },
+    { id:'hanji',   name:'한지 서책', paper:'#f4efe4', ink:'#2b2622', muted:'#81776b', line:'#ddd2bf', accent:'#9e2b25', tint:'#ebe3d3', tint2:'#efe6dc', bar:'#d8cdb9', warn:'#9e2b25' },
     { id:'ink',     name:'먹과 인주', paper:'#f8f7f4', ink:'#222020', muted:'#7a7570', line:'#dedad2', accent:'#b03a2e', tint:'#eeece6', tint2:'#f4ece5', bar:'#dcd8cf', warn:'#b03a2e' }
   ];
   const FONTS = {
     serif:"'Gowun Batang','Noto Serif KR','Nanum Myeongjo','Batang',serif",
     sans:"'Gowun Dodum','Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif",
-    hand:"'Nanum Pen Script','Gowun Batang',cursive"
+    hand:"'Nanum Pen Script','Gowun Batang',cursive",
+    brush:"'Nanum Brush Script','Gowun Batang',serif",
+    game:"'Do Hyeon','Gowun Dodum','Apple SD Gothic Neo',sans-serif"
   };
-  const FONT_LINK = '<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Nanum+Pen+Script&display=swap" rel="stylesheet">';
+  const FONT_LINK = '<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Nanum+Pen+Script&family=Nanum+Brush+Script&family=Do+Hyeon&display=swap" rel="stylesheet">';
   /* ---------- 코드 만들기 (모든 꾸밈은 style 속성 안에) ---------- */
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[ch]));
-  const SN = () => FONTS.sans, SR = () => FONTS.serif, HD = () => FONTS.hand;
+  const SN = () => FONTS.sans, SR = () => FONTS.serif, HD = () => FONTS.hand, BR = () => FONTS.brush, GM = () => FONTS.game;
   const T0 = 'border-collapse:collapse;border:0;margin:0;';
   const TD = 'padding:0;border:0;';
 
@@ -1725,7 +1736,9 @@
     letter:(P, user) => s => `<p style="margin:0 0 1em;"><span style="display:inline-block;max-width:100%;padding:3px 13px;background:${user ? P.paper : P.tint};border-radius:4px 14px 14px 14px;">${s}</span></p>`,
     log:(P) => s => `<p style="margin:0 0 1em;padding-left:.85em;border-left:2px solid ${P.accent};">${s}</p>`,
     score:(P) => s => `<p style="margin:0 0 1em;padding-left:1.5em;text-indent:-1.5em;"><span style="display:inline-block;width:1.5em;text-indent:0;color:${P.accent};">♪</span>${s}</p>`,
-    vow:(P) => s => `<p style="margin:0 0 1em;padding:0 .4em;"><span style="color:${P.accent};font-family:${SR()};">“</span>${s}<span style="color:${P.accent};font-family:${SR()};">”</span></p>`
+    vow:(P) => s => `<p style="margin:0 0 1em;padding:0 .4em;"><span style="color:${P.accent};font-family:${SR()};">“</span>${s}<span style="color:${P.accent};font-family:${SR()};">”</span></p>`,
+    wuxia:(P) => s => `<p style="margin:0 0 1em;"><span style="color:${P.accent};">「</span>${s}<span style="color:${P.accent};">」</span></p>`,
+    game:(P) => s => `<div style="margin:0 0 1em;padding:9px 30px 9px 14px;background:${P.tint};border:1px solid ${P.line};border-left:3px solid ${P.accent};border-radius:4px;position:relative;">${s}<span style="position:absolute;right:10px;bottom:6px;font-size:10px;color:${P.accent};">▼</span></div>`
   };
 
   function stat(s, P, opt){
@@ -1801,8 +1814,8 @@
     if (!m && /^[\w-]{11}$/.test(s)) m = [s, s];
     return m ? m[1] : '';
   }
-  const IMG_LABEL = { letter:'함께 넣은 사진', log:'첨부 사진', score:'삽화', vow:'기념 사진' };
-  const YT_LABEL = { letter:'지금 흐르는 곡', log:'♪ 함내 방송', score:'오늘의 연주곡', vow:'함께 들은 곡' };
+  const IMG_LABEL = { letter:'함께 넣은 사진', log:'첨부 사진', score:'삽화', vow:'기념 사진', wuxia:'화첩(畵帖)', game:'획득한 일러스트' };
+  const YT_LABEL = { letter:'지금 흐르는 곡', log:'♪ 함내 방송', score:'오늘의 연주곡', vow:'함께 들은 곡', wuxia:'風流, 오늘의 곡', game:'BGM ▶' };
   function capH(cap, P, kind){
     if (!cap) return '';
     const font = kind === 'letter' ? `font-family:${HD()};font-size:19px;` : kind === 'score' || kind === 'vow' ? `font-family:${SR()};font-style:italic;font-size:13px;` : `font-family:${SN()};font-size:12px;`;
@@ -2041,21 +2054,111 @@
     return h + `</div></div>`;
   }
 
-  const BUILDERS = { letter:buildLetter, log:buildLog, score:buildScore, vow:buildVow };
+  /* ===== 무협 (무림에서 온 희영) ===== */
+  const HAN = ['一','二','三','四','五','六','七','八','九','十'];
+  const hanNum = n => n <= 10 ? HAN[n - 1] : n <= 19 ? '十' + HAN[n - 11] : n <= 99 ? HAN[Math.floor(n / 10) - 1] + '十' + (n % 10 ? HAN[n % 10 - 1] : '') : String(n);
+  function buildWuxia(data, o){
+    const { P, parsed, when, place, title, dm, bgm, body, multi } = prep(data, o);
+    const rod = `<div style="height:10px;margin:0 -14px;background:${P.ink};border-radius:5px;opacity:.85;"></div>`;
+    let h = shell(o, P, body, `padding:0 26px;border-left:1px solid ${P.line};border-right:1px solid ${P.line};`);
+    h += rod + `<div style="padding:28px 0 6px;">`;
+    h += `<div style="font-family:${SR()};font-size:12px;letter-spacing:.4em;color:${P.accent};">武林錄${data.eyebrow ? `<span style="letter-spacing:0;color:${P.muted};">&nbsp;&nbsp;${esc(data.eyebrow)}</span>` : ''}</div>`;
+    h += `<table style="width:100%;${T0}margin-top:10px;"><tr><td style="${TD}vertical-align:middle;">`
+      + (title ? `<div style="font-family:${BR()};font-size:32px;line-height:1.25;">${esc(title)}</div>` : '')
+      + `</td><td style="width:56px;${TD}padding-left:12px;vertical-align:middle;text-align:right;">`
+      + `<div style="display:inline-block;width:44px;height:44px;border:2px solid ${P.accent};border-radius:4px;color:${P.accent};font-family:${SR()};font-weight:700;font-size:20px;line-height:40px;text-align:center;">錄</div></td></tr></table>`;
+    const day = dm ? `${dm[1]}년 ${Number(dm[2])}월 ${Number(dm[3])}일` : when;
+    const sub = [day, place].filter(Boolean).join(', ');
+    if (sub) h += `<div style="font-family:${SR()};font-size:13px;color:${P.muted};margin-top:6px;">— ${esc(sub)}</div>`;
+    h += `<div style="height:1px;background:${P.ink};opacity:.25;margin:20px 0 24px;"></div>`;
+    h += coverH(data, P, o.style);
+    parsed.forEach((x, i) => {
+      if (multi) h += `<div style="text-align:center;font-family:${SR()};font-weight:700;font-size:15px;letter-spacing:.3em;color:${P.accent};margin:${i ? 34 : 0}px 0 16px;">第${hanNum(i + 1)}回</div>`;
+      if (multi && i > 0) h += situ(x.meta, P);
+      h += userBlock(x.t, o, P, 'wuxia') + prose(x.body, P, SAY.wuxia(P));
+      h += turnImgsH(x.t, P, o.style);
+      const heart = o.heart && x.meta.heart, stats = o.stats ? x.meta.stats : [];
+      if (heart){
+        h += `<div style="margin:28px 0 0;padding:4px 0 4px 16px;border-left:3px solid ${P.accent};">`
+          + `<div style="font-family:${SR()};font-size:12px;letter-spacing:.2em;color:${P.accent};">心中之言</div>`
+          + `<div style="font-family:${BR()};font-size:27px;line-height:1.35;color:${P.ink};margin-top:2px;">${esc(x.meta.heart)}</div></div>`;
+      }
+      if (stats.length){ h += `<div style="margin:20px 0 0;">`; stats.forEach(s => h += stat(s, P, { warn:true })); h += `</div>`; }
+    });
+    if (o.bgm && ytId(data.yt)) h += ytCard(data, bgm, P, o.style);
+    else if (o.bgm && bgm) h += `<div style="margin-top:26px;font-family:${SR()};font-size:13px;color:${P.muted};"><span style="color:${P.accent};">風流</span>&nbsp; ${esc(bgm)}</div>`;
+    h += galleryH(data, P, o.style) + tagsH(data, P);
+    h += `<div style="margin:26px 0 22px;text-align:right;font-family:${SR()};font-size:12px;color:${P.muted};">且聽下回分解</div>`;
+    return h + `</div>` + rod + `</div>`;
+  }
+
+  /* ===== 동양풍 게임 (게임 속에서 튀어나온 구미호 희영) ===== */
+  function buildGame(data, o){
+    const { P, parsed, when, place, title, bgm, body, multi, tm } = prep(data, o);
+    const win = (label, inner, extra) => `<div style="margin:26px 0 0;border:1px solid ${P.accent};border-radius:6px;background:${P.tint};${extra || ''}">`
+      + `<div style="padding:6px 12px;border-bottom:1px solid ${P.line};font-family:${GM()};font-size:13px;color:${P.accent};">${label}</div>`
+      + `<div style="padding:14px 14px 4px;">${inner}</div></div>`;
+    let h = shell(o, P, body, `padding:6px;border:1px solid ${P.accent};border-radius:10px;`);
+    h += `<div style="border:1px solid ${P.line};border-radius:6px;padding:26px 20px 22px;">`;
+    h += `<table style="width:100%;${T0}"><tr><td style="${TD}">`
+      + `<span style="display:inline-block;padding:2px 10px;border:1px solid ${P.accent};border-radius:999px;font-family:${GM()};font-size:12px;color:${P.accent};">퀘스트 기록</span>`
+      + (data.eyebrow ? `<span style="font-family:${SN()};font-size:12px;color:${P.muted};">&nbsp; ${esc(data.eyebrow)}</span>` : '')
+      + `</td></tr></table>`;
+    if (title) h += `<div style="font-family:${GM()};font-size:25px;line-height:1.4;margin:12px 0 10px;">${esc(title)}</div>`;
+    const rows = [['위치', place], ['시간', when]].filter(r => r[1]);
+    const duet = [data.partner, data.me].filter(Boolean);
+    if (duet.length) rows.push(['파티', duet.join('  ♥  ')]);
+    if (rows.length){
+      h += `<table style="width:100%;${T0}margin:0 0 4px;">` + rows.map(([k, v]) =>
+        `<tr><td style="width:44px;${TD}padding:2px 0;font-family:${GM()};font-size:12px;color:${P.accent};vertical-align:top;">${esc(k)}</td><td style="${TD}padding:2px 0;font-family:${SN()};font-size:13px;color:${P.ink};">${esc(v)}</td></tr>`).join('') + `</table>`;
+    }
+    h += `<div style="height:1px;background:${P.line};margin:18px 0 22px;"></div>`;
+    h += coverH(data, P, o.style);
+    parsed.forEach((x, i) => {
+      if (multi) h += `<div style="text-align:center;font-family:${GM()};font-size:14px;color:${P.accent};margin:${i ? 32 : 0}px 0 14px;">─ ${i + 1}장 ─</div>`;
+      if (multi && i > 0) h += situ(x.meta, P);
+      h += userBlock(x.t, o, P, 'game') + prose(x.body, P, SAY.game(P));
+      h += turnImgsH(x.t, P, o.style);
+      const heart = o.heart && x.meta.heart, stats = o.stats ? x.meta.stats : [];
+      if (heart){
+        h += `<div style="margin:26px 0 0;padding:14px 16px;border:1px dashed ${P.accent};border-radius:6px;text-align:center;">`
+          + `<div style="font-family:${GM()};font-size:13px;color:${P.accent};">★ 이벤트 해금: ${esc(x.meta.heartLabel || '속마음')}</div>`
+          + `<div style="font-family:${HD()};font-size:25px;line-height:1.4;color:${P.ink};margin-top:6px;">${esc(x.meta.heart)}</div></div>`;
+      }
+      if (stats.length){
+        let inner = ''; stats.forEach(s => inner += stat(s, P, { warn:true, h:6 }));
+        h += win('상태창', inner);
+      }
+    });
+    if (o.bgm && ytId(data.yt)) h += ytCard(data, bgm, P, o.style);
+    else if (o.bgm && bgm) h += `<div style="margin-top:24px;padding:8px 12px;border:1px solid ${P.line};border-radius:6px;font-family:${SN()};font-size:13px;"><span style="font-family:${GM()};color:${P.accent};">BGM ▶</span>&nbsp; ${esc(bgm)}</div>`;
+    h += galleryH(data, P, o.style) + tagsH(data, P);
+    h += `<div style="margin-top:22px;text-align:center;font-family:${GM()};font-size:12px;color:${P.muted};">— 자동 저장되었습니다 —</div>`;
+    return h + `</div></div>`;
+  }
+
+  const BUILDERS = { letter:buildLetter, log:buildLog, score:buildScore, vow:buildVow, wuxia:buildWuxia, game:buildGame };
   function build(data, o){ return (BUILDERS[o.style] || buildLetter)(data, o); }
     return { build, PALETTES, toImgs, ytId };
   })();
 
   /* ---------- 읽기 서식 고르기 ---------- */
-  const READ_STYLES = [['classic','기본'],['letter','편지'],['log','항해일지'],['score','악보'],['vow','서약서']];
-  const DEFAULT_PAL = { letter:'blossom', log:'night', score:'blossom', vow:'ink' };
+  const READ_STYLES = [['classic','기본'],['letter','편지'],['log','항해일지'],['score','악보'],['vow','서약서'],['wuxia','무협'],['game','동양풍 게임']];
+  const DEFAULT_PAL = { letter:'blossom', log:'night', score:'blossom', vow:'ink', wuxia:'hanji', game:'jade' };
+  // 서식 고르는 순서: 이번에 방문자가 직접 고른 것 > 항로 설정의 기본 서식 > 지난번에 고른 것 > LOG.readStyle
   let readStyle = LOG.readStyle || 'classic';
+  let savedStyle = null, sessionStyle = null;
   let readPal = {};
   try{
     const r = JSON.parse(localStorage.getItem('home-read') || 'null');
-    if (r){ if (READ_STYLES.some(x => x[0] === r.style)) readStyle = r.style; readPal = r.pal || {}; }
+    if (r){ if (READ_STYLES.some(x => x[0] === r.style)) savedStyle = r.style; readPal = r.pal || {}; }
   }catch(e){}
-  function saveRead(){ try{ localStorage.setItem('home-read', JSON.stringify({ style:readStyle, pal:readPal })); }catch(e){} }
+  const validStyle = st => READ_STYLES.some(x => x[0] === st) ? st : null;
+  function styleFor(e){
+    const rs = e && store.routes[e.route] ? validStyle(store.routes[e.route].style) : null;
+    return sessionStyle || rs || savedStyle || validStyle(LOG.readStyle) || 'classic';
+  }
+  function saveRead(){ try{ localStorage.setItem('home-read', JSON.stringify({ style:savedStyle, pal:readPal })); }catch(e){} }
   const palOf = st => readPal[st] || DEFAULT_PAL[st] || 'blossom';
 
   function renderReadBar(){
@@ -2063,7 +2166,7 @@
     READ_STYLES.forEach(([id, name]) => {
       const b = el('button', null, name); b.type = 'button';
       b.setAttribute('aria-pressed', String(readStyle === id));
-      b.addEventListener('click', () => { readStyle = id; saveRead(); openReader(currentId); });
+      b.addEventListener('click', () => { sessionStyle = savedStyle = id; saveRead(); openReader(currentId); });
       seg.appendChild(b);
     });
     const pals = $('readPals'); pals.replaceChildren();
@@ -2238,6 +2341,9 @@
     const r = (!isNew && store.routes[name]) || { guide:'', kicker:'', destination:'', motto:'', crew:[] };
     $('cfgNew').value = '';
     $('cfgGuide').value = r.guide; $('cfgKicker').value = r.kicker; $('cfgDest').value = r.destination; $('cfgMotto').value = r.motto || '';
+    const cs = $('cfgStyle'); cs.replaceChildren();
+    [['', '정하지 않음 (방문자가 고른 서식)']].concat(READ_STYLES).forEach(([v, t]) => { const o = document.createElement('option'); o.value = v; o.textContent = t; cs.appendChild(o); });
+    cs.value = validStyle(r.style) || '';
     $('cfgGuide').placeholder = '비우면 ' + (LOG.guide || '-');
     $('cfgDest').placeholder = '비우면 ' + (LOG.destination || '기본 목적지');
     $('cfgCrew').replaceChildren();
@@ -2269,8 +2375,8 @@
       if (!name){ alert('새 항로 이름을 적어주세요.'); $('cfgNew').focus(); return; }
     }
     const crew = [...$('cfgCrew').children].map(r => ({ name:r.querySelector('.mn').value.trim(), note:r.querySelector('.mt').value.trim() })).filter(m => m.name);
-    const v = { guide:$('cfgGuide').value.trim(), kicker:$('cfgKicker').value.trim(), destination:$('cfgDest').value.trim(), motto:$('cfgMotto').value.trim(), crew };
-    if (!v.guide && !v.kicker && !v.destination && !v.motto && !crew.length) delete store.routes[name];
+    const v = { guide:$('cfgGuide').value.trim(), kicker:$('cfgKicker').value.trim(), destination:$('cfgDest').value.trim(), motto:$('cfgMotto').value.trim(), style:$('cfgStyle').value, crew };
+    if (!v.guide && !v.kicker && !v.destination && !v.motto && !v.style && !crew.length) delete store.routes[name];
     else store.routes[name] = v;
     persist('‘' + name + '’ 항로 설정을 저장했어요');
     closeCfg();
