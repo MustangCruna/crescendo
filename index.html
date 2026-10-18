@@ -1796,7 +1796,11 @@
   function safeSrc(s){
     s = String(s || '').trim();
     if (/^https?:\/\//i.test(s)) return s;
-    if (s && !s.startsWith('//') && /^[^:\s<>"']+$/.test(s)) return s;   // 같은 저장소 안의 파일
+    if (s && !s.startsWith('//') && /^[^:\s<>"']+$/.test(s)){
+      // 같은 저장소 안의 파일: 홈에서 열었으면 블로그에 붙여도 보이도록 전체 주소로 바꾼다
+      if (/^https?:$/.test(location.protocol) && !/claude\.ai$/.test(location.hostname)){ try{ return new URL(s, location.href).href; }catch(e){} }
+      return s;
+    }
     return '';
   }
   function toImgs(v){
