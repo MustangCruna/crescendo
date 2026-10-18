@@ -81,6 +81,8 @@
   .logbook > div{ padding:10px 12px; border-right:1px solid var(--line); border-bottom:1px solid var(--line); min-width:0; }
   .logbook dt{ font-size:.74rem; color:var(--muted); }
   .logbook dd{ margin:2px 0 0; font-family:var(--serif); font-weight:700; font-size:1rem; overflow-wrap:anywhere; }
+  .logbook .lb-sub{ font-size:.74rem; color:var(--muted); margin-top:2px; }
+  .logbook .anniv dd{ color:var(--blossom); }
   .logbook .dest{ grid-column:1 / -1; }
   .logbook .dest dd{ color:var(--blossom); }
   @media (max-width:520px){ .logbook{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
@@ -373,8 +375,9 @@
       <dl class="logbook">
         <div><dt>함선</dt><dd id="lbShip"></dd></div>
         <div><dt>함장</dt><dd id="lbCaptain"></dd></div>
-        <div><dt>출항</dt><dd id="lbSince">-</dd></div>
+        <div><dt>출항</dt><dd id="lbSince">-</dd><div class="lb-sub" id="lbSinceSub" hidden></div></div>
         <div><dt>기록</dt><dd id="lbCount">-</dd></div>
+        <div class="wide anniv" id="lbAnnivBox" hidden><dt>결혼 기념일</dt><dd id="lbAnniv"></dd><div class="lb-sub" id="lbAnnivSub"></div></div>
         <div class="wide guide" id="lbGuideBox"><dt>가이드</dt><dd id="lbGuide"></dd></div>
         <div class="wide" id="lbCrewBox" hidden><dt>선원</dt><dd class="crew" id="lbCrew"></dd></div>
         <div class="dest">
@@ -591,6 +594,8 @@
     partner:     '재훈',       // 상대 캐릭터
     background:  'bg.jpg',     // 배경 이미지. 저장소에 bg.jpg를 올렸다면 'bg.jpg'
     motto:       '',           // 전체 항로 표지 문구. 비우면 가장 최근 속마음
+    since:       '2025-05-26', // 전체 항로의 출항일(두 사람이 처음 만난 날). 비우면 일지에서 계산
+    anniversary: '2025-09-04', // 결혼 기념일. 전체 항로 표지에만 보여요. 비우면 숨김
     readStyle:   'classic'     // 처음 보여줄 서식: classic, letter, log, score, vow
   };
 
@@ -928,7 +933,33 @@
     $('lbCount').textContent = loadState === 'loading' ? '불러오는 중' : n + '편';
     let since = '';
     for (const e of arr){ since = dateOnly(info(e).when); if (since) break; }
-    $('lbSince').textContent = since || '-';
+    // 전체 항로에서는 처음 만난 날로 고정, 항로 안에서는 그 항로 일지로 계산
+    const ymd = str => { const m = String(str || '').match(/(\d{4})[-.\/](\d{1,2})[-.\/](\d{1,2})/); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null; };
+    const fmtD = d => d.getFullYear() + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + String(d.getDate()).padStart(2, '0');
+    const now = new Date(); const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const dayDiff = (a, b) => Math.round((b - a) / 86400000);
+    const fixedSince = routeFilter === null ? ymd(LOG.since) : null;
+    if (fixedSince){
+      $('lbSince').textContent = fmtD(fixedSince);
+      const n = dayDiff(fixedSince, today) + 1;
+      $('lbSinceSub').textContent = n > 0 ? '함께한 지 ' + n.toLocaleString('ko-KR') + '일' : '';
+      $('lbSinceSub').hidden = !(n > 0);
+    } else {
+      $('lbSince').textContent = since || '-';
+      $('lbSinceSub').hidden = true;
+    }
+    const ann = routeFilter === null ? ymd(LOG.anniversary) : null;
+    $('lbAnnivBox').hidden = !ann;
+    if (ann){
+      $('lbAnniv').textContent = fmtD(ann);
+      let next = new Date(today.getFullYear(), ann.getMonth(), ann.getDate());
+      if (next < today) next = new Date(today.getFullYear() + 1, ann.getMonth(), ann.getDate());
+      const years = next.getFullYear() - ann.getFullYear();
+      const left = dayDiff(today, next);
+      $('lbAnnivSub').textContent = left === 0
+        ? (years > 0 ? '오늘은 결혼 ' + years + '주년이에요 ♡' : '오늘은 두 사람의 결혼식 날이에요 ♡')
+        : '결혼 ' + years + '주년까지 D-' + left;
+    }
 
     // 일지가 쌓일수록 ∞에 다가가지만 닿지는 않는다
     const pos = n ? 94 * (1 - 1 / (1 + n / 10)) : 0;
