@@ -7,7 +7,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Nanum+Pen+Script&family=Nanum+Brush+Script&family=Do+Hyeon&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Nanum+Pen+Script&family=Nanum+Brush+Script&family=Do+Hyeon&family=Nanum+Gothic+Coding&display=swap" rel="stylesheet">
 <style>
   html,body{ margin:0; }
   [hidden]{ display:none !important; }
@@ -214,6 +214,9 @@
     { id:'mist',    name:'해무',      paper:'#f2f7f6', ink:'#203538', muted:'#6b8487', line:'#cfe1de', accent:'#2c8580', tint:'#dfeeec', tint2:'#e6ecf5', bar:'#c5dcd8', warn:'#c0453a' },
     { id:'jade',    name:'비취 누각', paper:'#10211c', ink:'#ebf0e6', muted:'#94aa9f', line:'#2d4a40', accent:'#d9b25a', tint:'#172e27', tint2:'#1d2d33', bar:'#284036', warn:'#e9826b' },
     { id:'hanji',   name:'한지 서책', paper:'#f4efe4', ink:'#2b2622', muted:'#81776b', line:'#ddd2bf', accent:'#9e2b25', tint:'#ebe3d3', tint2:'#efe6dc', bar:'#d8cdb9', warn:'#9e2b25' },
+    { id:'onair',   name:'온에어',   paper:'#13152b', ink:'#eceaf6', muted:'#9a9cc2', line:'#2e3258', accent:'#b79cff', tint:'#1b1e3b', tint2:'#232043', bar:'#2b2f54', warn:'#ff6b8a' },
+    { id:'manila',  name:'마닐라 서류철', paper:'#ece3cf', ink:'#2a241c', muted:'#6f6450', line:'#cdbf9f', accent:'#8c1c1c', tint:'#e3d8c0', tint2:'#e8dfcd', bar:'#d5c8a8', warn:'#8c1c1c' },
+    { id:'noir',    name:'느와르',   paper:'#171615', ink:'#e6e1d8', muted:'#9b948a', line:'#3a3633', accent:'#c9a24a', tint:'#211f1d', tint2:'#272421', bar:'#302d2a', warn:'#d0544b' },
     { id:'ink',     name:'먹과 인주', paper:'#f8f7f4', ink:'#222020', muted:'#7a7570', line:'#dedad2', accent:'#b03a2e', tint:'#eeece6', tint2:'#f4ece5', bar:'#dcd8cf', warn:'#b03a2e' }
   ];
   const FONTS = {
@@ -221,9 +224,10 @@
     sans:"'Gowun Dodum','Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif",
     hand:"'Nanum Pen Script','Gowun Batang',cursive",
     brush:"'Nanum Brush Script','Gowun Batang',serif",
-    game:"'Do Hyeon','Gowun Dodum','Apple SD Gothic Neo',sans-serif"
+    game:"'Do Hyeon','Gowun Dodum','Apple SD Gothic Neo',sans-serif",
+    mono:"'Nanum Gothic Coding','D2Coding',ui-monospace,Menlo,Consolas,monospace"
   };
-  const FONT_LINK = '<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Nanum+Pen+Script&family=Nanum+Brush+Script&family=Do+Hyeon&display=swap" rel="stylesheet">';
+  const FONT_LINK = '<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Nanum+Pen+Script&family=Nanum+Brush+Script&family=Do+Hyeon&family=Nanum+Gothic+Coding&display=swap" rel="stylesheet">';
 
   /* ---------- 예시 ---------- */
   const SAMPLE = {
@@ -337,6 +341,8 @@
     score:(P) => s => `<p style="margin:0 0 1em;padding-left:1.5em;text-indent:-1.5em;"><span style="display:inline-block;width:1.5em;text-indent:0;color:${P.accent};">♪</span>${s}</p>`,
     vow:(P) => s => `<p style="margin:0 0 1em;padding:0 .4em;"><span style="color:${P.accent};font-family:${SR()};">“</span>${s}<span style="color:${P.accent};font-family:${SR()};">”</span></p>`,
     wuxia:(P) => s => `<p style="margin:0 0 1em;"><span style="color:${P.accent};">「</span>${s}<span style="color:${P.accent};">」</span></p>`,
+    stream:(P) => s => `<p style="margin:0 0 1em;text-align:center;"><span style="display:inline-block;max-width:100%;padding:6px 14px;background:#0b0c18;color:#ffffff;border-radius:6px;text-align:left;">${s}</span></p>`,
+    request:(P) => s => `<p style="margin:0 0 1em;padding-left:1.3em;text-indent:-1.3em;"><span style="display:inline-block;width:1.3em;text-indent:0;color:${P.accent};">▸</span>${s}</p>`,
     game:(P) => s => `<div style="margin:0 0 1em;padding:9px 30px 9px 14px;background:${P.tint};border:1px solid ${P.line};border-left:3px solid ${P.accent};border-radius:4px;position:relative;">${s}<span style="position:absolute;right:10px;bottom:6px;font-size:10px;color:${P.accent};">▼</span></div>`
   };
 
@@ -416,8 +422,8 @@
     if (!m && /^[\w-]{11}$/.test(s)) m = [s, s];
     return m ? m[1] : '';
   }
-  const IMG_LABEL = { letter:'함께 넣은 사진', log:'첨부 사진', score:'삽화', vow:'기념 사진', wuxia:'화첩(畵帖)', game:'획득한 일러스트' };
-  const YT_LABEL = { letter:'지금 흐르는 곡', log:'♪ 함내 방송', score:'오늘의 연주곡', vow:'함께 들은 곡', wuxia:'風流, 오늘의 곡', game:'BGM ▶' };
+  const IMG_LABEL = { letter:'함께 넣은 사진', log:'첨부 사진', score:'삽화', vow:'기념 사진', wuxia:'화첩(畵帖)', game:'획득한 일러스트', stream:'방송 캡처', request:'첨부 자료' };
+  const YT_LABEL = { letter:'지금 흐르는 곡', log:'♪ 함내 방송', score:'오늘의 연주곡', vow:'함께 들은 곡', wuxia:'風流, 오늘의 곡', game:'BGM ▶', stream:'방송 BGM', request:'참고 음원' };
   function capH(cap, P, kind){
     if (!cap) return '';
     const font = kind === 'letter' ? `font-family:${HD()};font-size:19px;` : kind === 'score' || kind === 'vow' ? `font-family:${SR()};font-style:italic;font-size:13px;` : `font-family:${SN()};font-size:12px;`;
@@ -739,7 +745,102 @@
     return h + `</div></div>`;
   }
 
-  const BUILDERS = { letter:buildLetter, log:buildLog, score:buildScore, vow:buildVow, wuxia:buildWuxia, game:buildGame };
+  /* ===== 방송 (흑랑 대장과 듀라한 공주님) ===== */
+  const LIVE_RED = '#ff3b5c';
+  function buildStream(data, o){
+    const { P, parsed, when, place, title, tm, bgm, body, multi } = prep(data, o);
+    let h = shell(o, P, body, `border:1px solid ${P.line};border-radius:14px;overflow:hidden;`);
+    h += `<div style="padding:18px 18px 16px;background:${P.tint};border-bottom:1px solid ${P.line};">`
+      + `<table style="width:100%;${T0}"><tr><td style="${TD}vertical-align:middle;">`
+      + `<span style="display:inline-block;padding:2px 9px;background:${LIVE_RED};color:#ffffff;border-radius:4px;font-family:${GM()};font-size:13px;line-height:1.5;">● LIVE</span>`
+      + (tm || when ? `<span style="font-family:${SN()};font-size:12px;color:${P.muted};">&nbsp; ${esc(tm ? tm + ' 방송 시작' : when)}</span>` : '')
+      + `</td></tr></table>`;
+    if (title) h += `<div style="font-family:${GM()};font-size:24px;line-height:1.4;margin:10px 0 4px;">${esc(title)}</div>`;
+    const duet = [data.partner, data.me].filter(Boolean);
+    const ch = [data.eyebrow, duet.length ? duet.join(' × ') : ''].filter(Boolean);
+    if (ch.length) h += `<div style="font-family:${SN()};font-size:13px;color:${P.accent};">${esc(ch[0])}</div>` + (ch[1] ? `<div style="font-family:${SN()};font-size:12px;color:${P.muted};">${esc(ch[1])}</div>` : '');
+    if (place) h += `<div style="font-family:${SN()};font-size:12px;color:${P.muted};margin-top:2px;">방송 장소: ${esc(place)}</div>`;
+    h += `</div><div style="padding:22px 18px 20px;">`;
+    const cv = toImgs(data.cover)[0];
+    if (cv){
+      h += `<div style="margin:0 0 24px;border:1px solid ${P.line};border-radius:10px;overflow:hidden;background:#000000;">${imgTag(cv, 0)}`
+        + (cv.cap ? `<div style="padding:6px 10px;font-family:${SN()};font-size:12px;color:${P.muted};background:${P.tint};">${esc(cv.cap)}</div>` : '') + `</div>`;
+    }
+    parsed.forEach((x, i) => {
+      if (multi) h += `<div style="margin:${i ? 30 : 0}px 0 14px;"><span style="display:inline-block;padding:2px 10px;border:1px solid ${P.accent};border-radius:999px;font-family:${GM()};font-size:12px;color:${P.accent};">#${i + 1} 클립</span></div>`;
+      if (multi && i > 0) h += situ(x.meta, P);
+      h += userBlock(x.t, o, P, 'stream') + prose(x.body, P, SAY.stream(P));
+      h += turnImgsH(x.t, P, o.style);
+      const heart = o.heart && x.meta.heart, stats = o.stats ? x.meta.stats : [];
+      if (heart){
+        h += `<div style="margin:26px 0 0;padding:12px 14px;background:${P.tint2};border:1px solid ${P.line};border-left:4px solid ${P.accent};border-radius:8px;">`
+          + `<div style="font-family:${GM()};font-size:13px;color:${P.accent};">♥ 마석 1개를 후원했어요</div>`
+          + `<div style="font-family:${SN()};font-size:11px;color:${P.muted};margin-top:1px;">${esc(x.meta.heartLabel || '속마음')}</div>`
+          + `<div style="font-family:${HD()};font-size:24px;line-height:1.4;color:${P.ink};margin-top:4px;">${esc(x.meta.heart)}</div></div>`;
+      }
+      if (stats.length){
+        h += `<div style="margin:20px 0 0;padding:14px 14px 4px;border:1px solid ${P.line};border-radius:8px;">`
+          + `<div style="font-family:${GM()};font-size:12px;color:${P.muted};margin-bottom:10px;">방송 지표</div>`;
+        stats.forEach(s => h += stat(s, P, { warn:true, h:6 }));
+        h += `</div>`;
+      }
+    });
+    if (o.bgm && ytId(data.yt)) h += ytCard(data, bgm, P, o.style);
+    else if (o.bgm && bgm) h += `<div style="margin-top:24px;padding:8px 12px;background:${P.tint};border-radius:8px;font-family:${SN()};font-size:13px;"><span style="font-family:${GM()};color:${P.accent};">방송 BGM ▶</span>&nbsp; ${esc(bgm)}</div>`;
+    h += galleryH(data, P, o.style) + tagsH(data, P);
+    h += `<div style="margin-top:22px;padding-top:12px;border-top:1px solid ${P.line};text-align:center;font-family:${SN()};font-size:12px;color:${P.muted};">방송이 종료되었습니다. 다시보기는 항해일지에서.</div>`;
+    return h + `</div></div>`;
+  }
+
+  /* ===== 의뢰서 (프리랜서 전향기, 느와르 AU) ===== */
+  function buildRequest(data, o){
+    const { P, parsed, when, place, title, dm, bgm, body, multi } = prep(data, o);
+    const MO = FONTS.mono;
+    const no = data.no ? String(data.no).padStart(3, '0') : (dm ? dm[1].slice(2) + dm[2].padStart(2, '0') + dm[3].padStart(2, '0') : '----');
+    let h = shell(o, P, body, `padding:26px 22px 24px;border:1px solid ${P.line};border-radius:3px;`);
+    h += `<table style="width:100%;${T0}"><tr>`
+      + `<td style="${TD}vertical-align:bottom;font-family:${SR()};font-weight:700;font-size:22px;letter-spacing:.35em;">의뢰서</td>`
+      + `<td style="${TD}vertical-align:bottom;text-align:right;font-family:${MO};font-size:12px;color:${P.muted};">No. ${esc(no)}</td></tr></table>`;
+    h += `<div style="border-top:3px double ${P.ink};margin:8px 0 16px;opacity:.7;"></div>`;
+    const duet = [data.partner, data.me].filter(Boolean);
+    const rows = [['건명', title], ['분류', data.eyebrow], ['일시', when], ['장소', place], ['담당', duet.join(', ')]].filter(r => r[1]);
+    if (rows.length){
+      h += `<table style="width:100%;border-collapse:collapse;margin:0 0 24px;">` + rows.map(([k, v]) =>
+        `<tr><td style="width:56px;padding:7px 8px;border:1px solid ${P.line};background:${P.tint};font-family:${MO};font-size:12px;color:${P.muted};vertical-align:top;">${esc(k)}</td>`
+        + `<td style="padding:7px 10px;border:1px solid ${P.line};font-family:${k === '건명' ? SR() : SN()};${k === '건명' ? 'font-weight:700;font-size:15px;' : 'font-size:13px;'}color:${P.ink};">${esc(v)}</td></tr>`).join('') + `</table>`;
+    }
+    h += coverH(data, P, o.style);
+    h += `<div style="font-family:${MO};font-size:12px;color:${P.accent};margin:0 0 12px;">경위</div>`;
+    parsed.forEach((x, i) => {
+      if (multi) h += `<div style="font-family:${MO};font-size:12px;color:${P.muted};margin:${i ? 28 : 0}px 0 10px;">─ 기록 ${i + 1} ─</div>`;
+      if (multi && i > 0) h += situ(x.meta, P);
+      h += userBlock(x.t, o, P, 'request') + prose(x.body, P, SAY.request(P));
+      h += turnImgsH(x.t, P, o.style);
+      const heart = o.heart && x.meta.heart, stats = o.stats ? x.meta.stats : [];
+      if (heart){
+        h += `<div style="margin:26px 0 0;padding:14px 16px;border:1px dashed ${P.ink};border-radius:2px;">`
+          + `<div style="font-family:${MO};font-size:12px;color:${P.accent};">비고: 기밀, 열람 주의</div>`
+          + `<div style="font-family:${HD()};font-size:24px;line-height:1.4;color:${P.ink};margin-top:6px;">${esc(x.meta.heart)}</div></div>`;
+      }
+      if (stats.length){
+        h += `<div style="margin:20px 0 0;"><div style="font-family:${MO};font-size:12px;color:${P.muted};margin-bottom:10px;">평가</div>`;
+        stats.forEach(s => h += stat(s, P, { warn:true }));
+        h += `</div>`;
+      }
+    });
+    if (o.bgm && ytId(data.yt)) h += ytCard(data, bgm, P, o.style);
+    else if (o.bgm && bgm) h += `<div style="margin-top:22px;font-family:${MO};font-size:12px;color:${P.muted};">참고 음원: <span style="font-family:${SN()};color:${P.ink};">${esc(bgm)}</span></div>`;
+    h += galleryH(data, P, o.style);
+    h += `<table style="width:100%;${T0}margin-top:30px;"><tr>`
+      + `<td style="${TD}vertical-align:bottom;">`
+      + (duet.length ? duet.map(n => `<div style="display:inline-block;margin:0 18px 0 0;font-family:${MO};font-size:11px;color:${P.muted};">담당<div style="margin-top:14px;padding-top:4px;border-top:1px solid ${P.ink};min-width:72px;font-family:${SR()};font-size:14px;color:${P.ink};">${esc(n)}</div></div>`).join('') : '')
+      + `</td><td style="width:96px;${TD}text-align:right;vertical-align:bottom;">`
+      + `<span style="display:inline-block;padding:4px 12px;border:3px double ${P.accent};border-radius:4px;color:${P.accent};font-family:${SR()};font-weight:700;font-size:17px;letter-spacing:.3em;padding-left:calc(12px + .3em);transform:rotate(-8deg);">완료</span></td></tr></table>`;
+    h += tagsH(data, P);
+    return h + `</div>`;
+  }
+
+  const BUILDERS = { letter:buildLetter, log:buildLog, score:buildScore, vow:buildVow, wuxia:buildWuxia, game:buildGame, stream:buildStream, request:buildRequest };
   function build(data, o){ return (BUILDERS[o.style] || buildLetter)(data, o); }
 
   const BLANK = {
@@ -847,9 +948,11 @@
     { id:'score',  name:'악보', desc:'오선과 크레센도, 악장, Coda' },
     { id:'vow',    name:'서약서', desc:'겹테두리, 두 사람의 서명과 인장' },
     { id:'wuxia',  name:'무협', desc:'두루마리 서책, 第一回, 붓글씨 속마음' },
-    { id:'game',   name:'동양풍 게임', desc:'대화창, 상태창, 이벤트 해금' }
+    { id:'game',   name:'동양풍 게임', desc:'대화창, 상태창, 이벤트 해금' },
+    { id:'stream', name:'방송', desc:'LIVE 배지, 자막, 후원 메시지 속마음' },
+    { id:'request', name:'의뢰서', desc:'의뢰 양식, 경위, 기밀 비고, 완료 도장' }
   ];
-  const STYLE_PAL = { wuxia:'hanji', game:'jade' };   // 새 서식을 고르면 어울리는 편지지로 바꿔준다
+  const STYLE_PAL = { wuxia:'hanji', game:'jade', stream:'onair', request:'manila' };   // 새 서식을 고르면 어울리는 편지지로 바꿔준다
   function renderStyles(){
     const box = $('styles'); box.replaceChildren();
     STYLES.forEach(st => {
