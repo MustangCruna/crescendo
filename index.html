@@ -249,6 +249,19 @@
   .scene-nav{ display:flex; justify-content:space-between; gap:8px; margin-top:30px; }
 
   /* ---------- 삽화와 BGM ---------- */
+  .byway{ margin:18px 0 8px; }
+  .byway summary{ cursor:pointer; font-size:.84rem; color:var(--muted); }
+  .byway-card{ margin-top:12px; padding:12px 14px 2px; border:1px dashed var(--line); border-radius:12px; opacity:.9; font-size:.95rem; }
+  .byway-name{ font-size:.78rem; color:var(--accent); margin-bottom:8px; }
+  .byway-mine{ padding-left:10px; border-left:2px solid var(--line); color:var(--muted); margin-bottom:10px; }
+  .byway-heart{ font-family:var(--hand); font-size:1.35rem; color:var(--blossom); margin:4px 0 12px; }
+  .grip{ cursor:grab; color:var(--muted); font-size:1.1rem; line-height:1; padding:4px 6px; user-select:none; touch-action:none; }
+  .turn.dragging{ opacity:.5; }
+  .turn-head{ gap:6px; }
+  .turn-head b{ margin-right:auto; }
+  .moves{ display:inline-flex; gap:4px; flex-wrap:wrap; justify-content:flex-end; }
+  .alts{ display:flex; flex-direction:column; gap:8px; }
+  .alt{ border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:12px; padding:10px; display:flex; flex-direction:column; gap:6px; }
   .fig{ margin:24px 0; }
   .fig img{ display:block; max-width:100%; height:auto; margin:0 auto; border-radius:10px; }
   .fig figcaption{ margin-top:6px; text-align:center; font-size:.8rem; color:var(--muted); }
@@ -500,6 +513,10 @@
       <input type="checkbox" id="postWhole">
       <span id="postWholeLabel"></span>
     </label>
+    <label class="check" for="postAltImg">
+      <input type="checkbox" id="postAltImg">
+      <span>이미지로 만들 때 샛길도 넣기</span>
+    </label>
     <div>
       <label for="postCode">게시글 코드</label>
       <textarea id="postCode" rows="6" readonly style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.78rem;"></textarea>
@@ -663,7 +680,8 @@
     try{ return crypto.randomUUID(); }catch(e){ return 'e' + Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
   }
   const cleanImgs = v => (Array.isArray(v) ? v : []).map(x => ({ src:String((x && x.src) || '').trim(), cap:String((x && x.cap) || '').trim() })).filter(x => x.src);
-  const cleanTurn = t => ({ user:String(t.user || ''), showUser:t.showUser === true, reply:String(t.reply || ''), images:cleanImgs(t.images) });
+  const cleanAlts = v => (Array.isArray(v) ? v : []).map(a => ({ label:String((a && a.label) || '').trim(), user:String((a && a.user) || ''), reply:String((a && a.reply) || '') })).filter(a => a.user.trim() || a.reply.trim());
+  const cleanTurn = t => ({ user:String(t.user || ''), showUser:t.showUser === true, reply:String(t.reply || ''), images:cleanImgs(t.images), alts:cleanAlts(t.alts) });
   function cleanEntry(x){
     let turns = [];
     if (Array.isArray(x.turns)) turns = x.turns.filter(t => t && (typeof t.reply === 'string' || typeof t.user === 'string')).map(cleanTurn);
@@ -1166,6 +1184,22 @@
     return rec;
   }
   function imgsText(list){ return (Array.isArray(list) ? list : []).map(x => x.src + (x.cap ? ' | ' + x.cap : '')).join('\n'); }
+  function altsView(t){
+    const alts = t.alts || [];
+    if (!alts.length) return null;
+    const dt = el('details', 'byway');
+    dt.appendChild(el('summary', null, '샛길 ' + alts.length + '개 보기'));
+    alts.forEach((a, i) => {
+      const c = el('div', 'byway-card');
+      c.appendChild(el('div', 'byway-name', a.label || '샛길 ' + (i + 1)));
+      if (a.user && a.user.trim()) c.appendChild(renderProse(a.user, el('div', 'prose byway-mine')));
+      const pr = P(a.reply);
+      c.appendChild(renderProse(pr.body, el('div', 'prose')));
+      if (pr.meta.heart) c.appendChild(el('p', 'byway-heart', pr.meta.heart));
+      dt.appendChild(c);
+    });
+    return dt;
+  }
   function figure(img, kind){
     const f = el('figure', 'fig fig-' + kind);
     const im = document.createElement('img');
@@ -1255,6 +1289,7 @@
       const { body, meta } = P(t.reply);
       box.appendChild(renderProse(body, el('article', 'prose')));
       FMT.toImgs(t.images).forEach(img => box.appendChild(figure(img, 'inline')));
+      const av = altsView(t); if (av) box.appendChild(av);
       const rows = [];
       if (single){
         if (meta.summary && e.title) rows.push({ label:'요약', value:meta.summary });
@@ -1332,11 +1367,80 @@
   let lastFocus = null;
   let turnSeq = 0;
 
+  // 샛길: 본 이야기에서 빠졌지만 남겨두고 싶은 기록
+  let altSeq = 0;
+  function altBlock(turnEl, a, focus){
+    a = a || { label:'', user:'', reply:'' };
+    const n = ++altSeq;
+    const w = el('div', 'alt');
+    const head = el('div', 'turn-head');
+    const swap = el('button', 'btn', '본편으로 올리기'); swap.type = 'button';
+    const del = el('button', 'btn danger', '빼기'); del.type = 'button';
+    const mv = el('span', 'moves'); mv.append(swap, del);
+    head.append(el('b', null, '샛길'), mv);
+    const ll = el('label', null, '이름 (선택)'); ll.htmlFor = 'al' + n;
+    const al = el('input', 'al'); al.type = 'text'; al.id = 'al' + n; al.placeholder = '예: 다시 굴린 답변, IF'; al.value = a.label || '';
+    const lu = el('label', null, '내가 보낸 메시지 (선택)'); lu.htmlFor = 'au' + n;
+    const au = el('textarea', 'au'); au.id = 'au' + n; au.rows = 2; au.value = a.user || '';
+    const lr = el('label', null, 'AI 답변'); lr.htmlFor = 'ar' + n;
+    const ar = el('textarea', 'ar'); ar.id = 'ar' + n; ar.rows = 5; ar.value = a.reply || '';
+    const box = (lab, inp) => { const x = el('div'); x.append(lab, inp); return x; };
+    w.append(head, box(ll, al), box(lu, au), box(lr, ar));
+    del.addEventListener('click', () => {
+      if ((au.value.trim() || ar.value.trim()) && !confirm('이 샛길을 지울까요?')) return;
+      w.remove();
+    });
+    swap.addEventListener('click', () => {
+      const tu = turnEl.querySelector('.tu'), ta = turnEl.querySelector('.ta');
+      [tu.value, au.value] = [au.value, tu.value];
+      [ta.value, ar.value] = [ar.value, ta.value];
+      al.value = '이전 본편';
+      toast('샛길을 본편으로 올렸어요. 원래 본편은 샛길로 내려갔어요');
+    });
+    turnEl.querySelector('.alts').appendChild(w);
+    if (focus) ar.focus();
+  }
+  // 손잡이(⠿)를 잡고 끌어서 순서를 바꾼다. 마우스와 터치 모두 되고, 화면 끝에 가면 저절로 스크롤된다.
+  function gripDrag(d){
+    const g = d.querySelector('.grip');
+    g.addEventListener('pointerdown', ev => {
+      if (ev.button !== undefined && ev.button !== 0) return;
+      ev.preventDefault();
+      const box = d.parentNode;
+      let y = ev.clientY, raf = 0, on = true;
+      d.classList.add('dragging');
+      const place = () => {
+        const others = [...box.children].filter(x => x !== d);
+        const after = others.find(x => { const r = x.getBoundingClientRect(); return y < r.top + r.height / 2; });
+        if (after){ if (after !== d.nextElementSibling) box.insertBefore(d, after); }
+        else if (box.lastElementChild !== d) box.appendChild(d);
+      };
+      const tick = () => {
+        if (!on) return;
+        const edge = 70, h = window.innerHeight;
+        const sp = y < edge ? -Math.ceil((edge - y) / 4) : y > h - edge ? Math.ceil((y - (h - edge)) / 4) : 0;
+        if (sp){ window.scrollBy(0, sp); place(); }
+        raf = requestAnimationFrame(tick);
+      };
+      const move = e2 => { y = e2.clientY; place(); };
+      const up = () => {
+        on = false; cancelAnimationFrame(raf);
+        document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); document.removeEventListener('pointercancel', up);
+        d.classList.remove('dragging'); renumberTurns();
+      };
+      // 칸을 옮기면 손잡이가 문서 안에서 자리를 바꾸므로, 움직임은 문서 전체에서 듣는다
+      document.addEventListener('pointermove', move); document.addEventListener('pointerup', up); document.addEventListener('pointercancel', up);
+      raf = requestAnimationFrame(tick);
+    });
+  }
   function renumberTurns(){
     const blocks = [...$('turns').children];
     blocks.forEach((d, i) => {
       d.querySelector('.turn-head b').textContent = '턴 ' + (i + 1);
-      d.querySelector('.turn-head .btn').hidden = blocks.length === 1;
+      d.querySelector('.turn-head .rm').hidden = blocks.length === 1;
+      d.querySelector('.turn-head .mv-up').disabled = i === 0;
+      d.querySelector('.turn-head .mv-dn').disabled = i === blocks.length - 1;
+      d.querySelector('.turn-head .grip').hidden = blocks.length === 1;
     });
   }
   function addTurnBlock(t, focus){
@@ -1344,13 +1448,19 @@
     const n = ++turnSeq;
     const d = el('div', 'turn');
     const head = el('div', 'turn-head');
-    const rm = el('button', 'btn danger', '이 턴 빼기'); rm.type = 'button';
+    const rm = el('button', 'btn danger rm', '이 턴 빼기'); rm.type = 'button';
     rm.addEventListener('click', () => {
       const filled = d.querySelector('.tu').value.trim() || d.querySelector('.ta').value.trim();
       if (filled && !confirm('이 턴의 내용을 지울까요?')) return;
       d.remove(); renumberTurns();
     });
-    head.append(el('b'), rm);
+    const grip = el('span', 'grip', '⠿'); grip.title = '끌어서 순서 바꾸기'; grip.setAttribute('aria-hidden', 'true');
+    const up = el('button', 'btn mv-up', '↑'); up.type = 'button'; up.setAttribute('aria-label', '위로');
+    const dn = el('button', 'btn mv-dn', '↓'); dn.type = 'button'; dn.setAttribute('aria-label', '아래로');
+    up.addEventListener('click', () => { if (d.previousElementSibling){ d.parentNode.insertBefore(d, d.previousElementSibling); renumberTurns(); up.focus(); } });
+    dn.addEventListener('click', () => { if (d.nextElementSibling){ d.parentNode.insertBefore(d.nextElementSibling, d); renumberTurns(); dn.focus(); } });
+    const moves = el('span', 'moves'); moves.append(up, dn, rm);
+    head.append(grip, el('b'), moves);
 
     const lu = el('label', null, '내가 보낸 메시지 (선택)'); lu.htmlFor = 'tu' + n;
     const tu = el('textarea', 'tu'); tu.id = 'tu' + n; tu.rows = 3; tu.placeholder = '비워둬도 괜찮아요'; tu.value = t.user;
@@ -1366,7 +1476,13 @@
     const li = el('label', null, '이 턴 아래 삽화 (선택)'); li.htmlFor = 'ti' + n;
     const ti = el('textarea', 'ti'); ti.id = 'ti' + n; ti.rows = 1; ti.placeholder = 'img/파일.jpg | 설명'; ti.value = imgsText(t.images);
     const wi = el('div'); wi.append(li, ti);
-    d.append(head, wu, ck, wa, wi);
+    const alts = el('div', 'alts');
+    const addAlt = el('button', 'btn add-alt', '샛길 추가'); addAlt.type = 'button';
+    addAlt.addEventListener('click', () => altBlock(d, null, true));
+    const wb = el('div'); wb.appendChild(addAlt);
+    d.append(head, wu, ck, wa, wi, alts, wb);
+    (t.alts || []).forEach(a => altBlock(d, a));
+    gripDrag(d);
     $('turns').appendChild(d);
     renumberTurns();
     if (focus){ tu.focus(); d.scrollIntoView({ block:'nearest' }); }
@@ -1377,7 +1493,8 @@
       user: d.querySelector('.tu').value,
       showUser: d.querySelector('.ts').checked,
       reply: d.querySelector('.ta').value,
-      images: FMT.toImgs(d.querySelector('.ti').value)
+      images: FMT.toImgs(d.querySelector('.ti').value),
+      alts: [...d.querySelectorAll('.alt')].map(w => ({ label:w.querySelector('.al').value.trim(), user:w.querySelector('.au').value, reply:w.querySelector('.ar').value })).filter(a => a.user.trim() || a.reply.trim())
     })).filter(t => t.user.trim() || t.reply.trim());
   }
 
@@ -1544,6 +1661,20 @@
     return `<div style="margin:${cover ? '0 0 26px' : '24px 0'};"><img src="${escH(img.src)}" alt="${escH(img.cap || '삽화')}" style="display:block;max-width:100%;${cover ? 'width:100%;' : ''}height:auto;margin:0 auto;border:0;border-radius:12px;">`
       + (img.cap ? `<div style="margin-top:6px;text-align:center;font-family:${PF.sans};font-size:12px;color:${c.muted};">${escH(img.cap)}</div>` : '') + `</div>`;
   }
+  function postAltsH(t, c){
+    const alts = t.alts || [];
+    if (!alts.length) return '';
+    return `<details data-alt="1" style="margin:18px 0 8px;"><summary style="cursor:pointer;font-family:${PF.sans};font-size:13px;color:${c.muted};">샛길 ${alts.length}개 보기</summary>`
+      + alts.map((a, i) => {
+        const pr = P(a.reply);
+        return `<div style="margin-top:12px;padding:12px 14px 2px;border:1px dashed ${c.line};border-radius:10px;font-size:15px;">`
+          + `<div style="font-family:${PF.sans};font-size:12px;color:${c.accent};margin:0 0 8px;">${escH(a.label || '샛길 ' + (i + 1))}</div>`
+          + (a.user && a.user.trim() ? `<div style="margin:0 0 10px;padding-left:10px;border-left:2px solid ${c.line};color:${c.muted};">${proseH(a.user, c)}</div>` : '')
+          + proseH(pr.body, c)
+          + (pr.meta.heart ? `<div style="margin:4px 0 12px;font-family:${PF.hand};font-size:21px;color:${c.blossom};">${escH(pr.meta.heart)}</div>` : '')
+          + `</div>`;
+      }).join('') + `</details>`;
+  }
   function postExtrasH(e, c){
     let h = '';
     const id = FMT.ytId(e.yt);
@@ -1578,6 +1709,7 @@
       const { body, meta } = P(t.reply);
       h += proseH(body, c);
       absImgs(t.images).forEach(img => { h += postImgH(img, c, false); });
+      h += postAltsH(t, c);
       const rows = [];
       if (single){
         if (meta.summary && e.title) rows.push({ label:'요약', value:meta.summary });
@@ -1698,7 +1830,15 @@
       const list = ($('postWhole').checked && postEntry.voyage) ? ordered().filter(x => x.voyage === postEntry.voyage) : [postEntry];
       code = list.map((x, i) => (i ? '<div style="height:28px;"></div>' : '') + FMT.build(fmtData(x), fmtOpts(readStyle, { fold:false }))).join('');
     }
-    box.innerHTML = code.replace(/<details[^>]*>/g, '<div>').replace(/<\/details>/g, '</div>').replace(/<summary[\s\S]*?<\/summary>/g, '');
+    box.innerHTML = code;
+    // 이미지에는 접기가 없으니: 샛길은 고른 대로 넣거나 빼고, 나머지 접힌 부분은 펼친다
+    box.querySelectorAll('details').forEach(dt => {
+      if (dt.hasAttribute('data-alt') && !$('postAltImg').checked){ dt.remove(); return; }
+      const div = document.createElement('div');
+      [...dt.childNodes].forEach(n => { if (!(n.nodeType === 1 && n.tagName === 'SUMMARY')) div.appendChild(n); });
+      if (dt.hasAttribute('data-alt')) div.setAttribute('style', dt.getAttribute('style') || '');
+      dt.replaceWith(div);
+    });
     document.body.appendChild(box);
     try{
       try{ await document.fonts.ready; }catch(e){}
@@ -1902,6 +2042,26 @@
       + `<a href="${url}" target="_blank" rel="noopener" style="font-size:12px;color:${P.muted};text-decoration:underline;">유튜브에서 듣기 ↗</a></td></tr></table>`;
   }
 
+  /* ---------- 샛길 ----------
+     본 이야기에서 빠졌지만 남겨두고 싶은 기록. 턴 아래에 접혀 들어가고, 표지 계산에는 들어가지 않는다. */
+  function altsH(t, P, o){
+    const alts = (Array.isArray(t.alts) ? t.alts : []).filter(a => a && (String(a.reply || '').trim() || String(a.user || '').trim()));
+    if (!alts.length || o.alts === false) return '';
+    const kind = o.style;
+    const sayFn = kind === 'letter' ? SAY.letter(P, false) : (SAY[kind] || SAY.log)(P);
+    let inner = '';
+    alts.forEach((a, i) => {
+      const pr = parse(a.reply);
+      inner += `<div style="margin:${i ? 14 : 12}px 0 0;padding:12px 14px 2px;border:1px dashed ${P.line};border-radius:8px;font-size:15px;opacity:.9;">`
+        + `<div style="font-family:${SN()};font-size:12px;color:${P.accent};margin:0 0 8px;">${esc(a.label || '샛길 ' + (i + 1))}</div>`
+        + (String(a.user || '').trim() ? `<div style="margin:0 0 10px;padding-left:10px;border-left:2px solid ${P.line};color:${P.muted};">${prose(a.user, P, sayFn)}</div>` : '')
+        + prose(pr.body, P, sayFn)
+        + (pr.meta.heart ? `<div style="margin:4px 0 12px;font-family:${HD()};font-size:21px;line-height:1.4;color:${P.accent};">${esc(pr.meta.heart)}</div>` : '')
+        + `</div>`;
+    });
+    return `<details data-alt="1" style="margin:18px 0 8px;"><summary style="cursor:pointer;font-family:${SN()};font-size:13px;color:${P.muted};">샛길 ${alts.length}개 보기</summary>${inner}</details>`;
+  }
+
   const ROMAN = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
 
   function prep(data, o){
@@ -1944,7 +2104,7 @@
     parsed.forEach((x, i) => {
       if (i > 0) h += `<div style="text-align:center;color:${P.accent};margin:26px 0;font-size:14px;letter-spacing:.6em;padding-left:.6em;">❀ ❀ ❀</div>`;
       h += userBlock(x.t, o, P, 'letter') + prose(x.body, P, SAY.letter(P, false));
-      h += turnImgsH(x.t, P, o.style);
+      h += turnImgsH(x.t, P, o.style) + altsH(x.t, P, o);
       if (multi && i > 0) h += situ(x.meta, P, '— ');
       const heart = o.heart && x.meta.heart, stats = o.stats ? x.meta.stats : [];
       if (heart || stats.length){
@@ -1994,7 +2154,7 @@
     parsed.forEach((x, i) => {
       if (i > 0) h += `<div style="text-align:center;color:${P.muted};margin:26px 0;letter-spacing:.8em;padding-left:.8em;">✧ ✧ ✧</div>`;
       h += userBlock(x.t, o, P, 'log') + prose(x.body, P, SAY.log(P));
-      h += turnImgsH(x.t, P, o.style);
+      h += turnImgsH(x.t, P, o.style) + altsH(x.t, P, o);
       if (multi && i > 0) h += situ(x.meta, P, `<span style="color:${P.accent};">상황</span>&nbsp; `);
       const heart = o.heart && x.meta.heart, stats = o.stats ? x.meta.stats : [];
       if (heart || stats.length){
@@ -2038,7 +2198,7 @@
       if (multi) h += `<div style="font-family:${SR()};font-weight:700;font-size:15px;color:${P.accent};margin:${i ? 34 : 0}px 0 12px;">${ROMAN[i] || i + 1}.</div>`;
       if (multi && i > 0) h += situ(x.meta, P);
       h += userBlock(x.t, o, P, 'score') + prose(x.body, P, SAY.score(P));
-      h += turnImgsH(x.t, P, o.style);
+      h += turnImgsH(x.t, P, o.style) + altsH(x.t, P, o);
       const heart = o.heart && x.meta.heart, stats = o.stats ? x.meta.stats : [];
       if (heart || stats.length){
         h += `<div style="margin:30px 0 0;">`
@@ -2073,7 +2233,7 @@
       if (i > 0) h += `<div style="text-align:center;color:${P.accent};margin:24px 0;font-size:13px;">❦</div>`;
       if (multi && i > 0) h += situ(x.meta, P);
       h += userBlock(x.t, o, P, 'vow') + prose(x.body, P, SAY.vow(P));
-      h += turnImgsH(x.t, P, o.style);
+      h += turnImgsH(x.t, P, o.style) + altsH(x.t, P, o);
       const heart = o.heart && x.meta.heart, stats = o.stats ? x.meta.stats : [];
       if (heart){
         h += `<div style="margin:28px 6px 0;padding:18px 16px;background:${P.tint};border-radius:8px;text-align:center;">`
@@ -2117,7 +2277,7 @@
       if (multi) h += `<div style="text-align:center;font-family:${SR()};font-weight:700;font-size:15px;letter-spacing:.3em;color:${P.accent};margin:${i ? 34 : 0}px 0 16px;">第${hanNum(i + 1)}回</div>`;
       if (multi && i > 0) h += situ(x.meta, P);
       h += userBlock(x.t, o, P, 'wuxia') + prose(x.body, P, SAY.wuxia(P));
-      h += turnImgsH(x.t, P, o.style);
+      h += turnImgsH(x.t, P, o.style) + altsH(x.t, P, o);
       const heart = o.heart && x.meta.heart, stats = o.stats ? x.meta.stats : [];
       if (heart){
         h += `<div style="margin:28px 0 0;padding:4px 0 4px 16px;border-left:3px solid ${P.accent};">`
@@ -2159,7 +2319,7 @@
       if (multi) h += `<div style="text-align:center;font-family:${GM()};font-size:14px;color:${P.accent};margin:${i ? 32 : 0}px 0 14px;">─ ${i + 1}장 ─</div>`;
       if (multi && i > 0) h += situ(x.meta, P);
       h += userBlock(x.t, o, P, 'game') + prose(x.body, P, SAY.game(P));
-      h += turnImgsH(x.t, P, o.style);
+      h += turnImgsH(x.t, P, o.style) + altsH(x.t, P, o);
       const heart = o.heart && x.meta.heart, stats = o.stats ? x.meta.stats : [];
       if (heart){
         h += `<div style="margin:26px 0 0;padding:14px 16px;border:1px dashed ${P.accent};border-radius:6px;text-align:center;">`
@@ -2203,7 +2363,7 @@
       if (multi) h += `<div style="margin:${i ? 30 : 0}px 0 14px;"><span style="display:inline-block;padding:2px 10px;border:1px solid ${P.accent};border-radius:999px;font-family:${GM()};font-size:12px;color:${P.accent};">#${i + 1} 클립</span></div>`;
       if (multi && i > 0) h += situ(x.meta, P);
       h += userBlock(x.t, o, P, 'stream') + prose(x.body, P, SAY.stream(P));
-      h += turnImgsH(x.t, P, o.style);
+      h += turnImgsH(x.t, P, o.style) + altsH(x.t, P, o);
       const heart = o.heart && x.meta.heart, stats = o.stats ? x.meta.stats : [];
       if (heart){
         h += `<div style="margin:26px 0 0;padding:12px 14px;background:${P.tint2};border:1px solid ${P.line};border-left:4px solid ${P.accent};border-radius:8px;">`
@@ -2248,7 +2408,7 @@
       if (multi) h += `<div style="font-family:${MO};font-size:12px;color:${P.muted};margin:${i ? 28 : 0}px 0 10px;">─ 기록 ${i + 1} ─</div>`;
       if (multi && i > 0) h += situ(x.meta, P);
       h += userBlock(x.t, o, P, 'request') + prose(x.body, P, SAY.request(P));
-      h += turnImgsH(x.t, P, o.style);
+      h += turnImgsH(x.t, P, o.style) + altsH(x.t, P, o);
       const heart = o.heart && x.meta.heart, stats = o.stats ? x.meta.stats : [];
       if (heart){
         h += `<div style="margin:26px 0 0;padding:14px 16px;border:1px dashed ${P.ink};border-radius:2px;">`
@@ -2427,6 +2587,11 @@
     let out = '';
     if (t.user && t.user.trim()) out += '[' + (LOG.me || '나') + ']\n' + t.user.trim() + '\n\n';
     out += String(t.reply || '').trim() + '\n';
+    (t.alts || []).forEach((a, i) => {
+      out += '\n[샛길: ' + (a.label || '샛길 ' + (i + 1)) + ']\n';
+      if (a.user && a.user.trim()) out += '[' + (LOG.me || '나') + ']\n' + a.user.trim() + '\n\n';
+      out += String(a.reply || '').trim() + '\n[샛길 끝]\n';
+    });
     return out;
   }
   $('txtBtn').addEventListener('click', () => {

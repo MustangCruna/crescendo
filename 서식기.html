@@ -59,7 +59,13 @@
 
   .turn{ border:1px dashed var(--line); border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:8px; }
   .turn-head{ display:flex; justify-content:space-between; align-items:center; }
-  .turn-head b{ font-weight:400; font-size:.84rem; color:var(--accent); }
+  .turn-head b{ font-weight:400; font-size:.84rem; color:var(--accent); margin-right:auto; }
+  .turn-head{ gap:6px; }
+  .turn-head .moves{ display:inline-flex; gap:4px; flex-wrap:wrap; justify-content:flex-end; }
+  .grip{ cursor:grab; color:var(--muted); font-size:1.1rem; line-height:1; padding:4px 6px; user-select:none; touch-action:none; }
+  .turn.dragging{ opacity:.5; }
+  .alts{ display:flex; flex-direction:column; gap:8px; }
+  .alt{ border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:10px; padding:10px; display:flex; flex-direction:column; gap:6px; background:var(--panel); }
   .check{ display:flex; gap:8px; align-items:center; font-size:.86rem; cursor:pointer; }
   .check input{ width:16px; height:16px; margin:0; accent-color:var(--accent); }
 
@@ -165,6 +171,7 @@
         <label class="check" for="oStats"><input type="checkbox" id="oStats" checked>수치 넣기</label>
         <label class="check" for="oBgm"><input type="checkbox" id="oBgm" checked>BGM 넣기</label>
         <label class="check" for="oFont"><input type="checkbox" id="oFont" checked>웹 글꼴 불러오기</label>
+        <label class="check" for="oAltImg"><input type="checkbox" id="oAltImg">이미지에 샛길 넣기</label>
       </div>
       <p class="hint" style="margin:0">웹 글꼴은 게시판이 허락할 때만 불러와져요. 막히면 게시판 기본 글꼴로 보여요.</p>
     </section>
@@ -469,6 +476,26 @@
       + `<a href="${url}" target="_blank" rel="noopener" style="font-size:12px;color:${P.muted};text-decoration:underline;">유튜브에서 듣기 ↗</a></td></tr></table>`;
   }
 
+  /* ---------- 샛길 ----------
+     본 이야기에서 빠졌지만 남겨두고 싶은 기록. 턴 아래에 접혀 들어가고, 표지 계산에는 들어가지 않는다. */
+  function altsH(t, P, o){
+    const alts = (Array.isArray(t.alts) ? t.alts : []).filter(a => a && (String(a.reply || '').trim() || String(a.user || '').trim()));
+    if (!alts.length || o.alts === false) return '';
+    const kind = o.style;
+    const sayFn = kind === 'letter' ? SAY.letter(P, false) : (SAY[kind] || SAY.log)(P);
+    let inner = '';
+    alts.forEach((a, i) => {
+      const pr = parse(a.reply);
+      inner += `<div style="margin:${i ? 14 : 12}px 0 0;padding:12px 14px 2px;border:1px dashed ${P.line};border-radius:8px;font-size:15px;opacity:.9;">`
+        + `<div style="font-family:${SN()};font-size:12px;color:${P.accent};margin:0 0 8px;">${esc(a.label || '샛길 ' + (i + 1))}</div>`
+        + (String(a.user || '').trim() ? `<div style="margin:0 0 10px;padding-left:10px;border-left:2px solid ${P.line};color:${P.muted};">${prose(a.user, P, sayFn)}</div>` : '')
+        + prose(pr.body, P, sayFn)
+        + (pr.meta.heart ? `<div style="margin:4px 0 12px;font-family:${HD()};font-size:21px;line-height:1.4;color:${P.accent};">${esc(pr.meta.heart)}</div>` : '')
+        + `</div>`;
+    });
+    return `<details data-alt="1" style="margin:18px 0 8px;"><summary style="cursor:pointer;font-family:${SN()};font-size:13px;color:${P.muted};">샛길 ${alts.length}개 보기</summary>${inner}</details>`;
+  }
+
   const ROMAN = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
 
   function prep(data, o){
@@ -511,7 +538,7 @@
     parsed.forEach((x, i) => {
       if (i > 0) h += `<div style="text-align:center;color:${P.accent};margin:26px 0;font-size:14px;letter-spacing:.6em;padding-left:.6em;">❀ ❀ ❀</div>`;
       h += userBlock(x.t, o, P, 'letter') + prose(x.body, P, SAY.letter(P, false));
-      h += turnImgsH(x.t, P, o.style);
+      h += turnImgsH(x.t, P, o.style) + altsH(x.t, P, o);
       if (multi && i > 0) h += situ(x.meta, P, '— ');
       const heart = o.heart && x.meta.heart, stats = o.stats ? x.meta.stats : [];
       if (heart || stats.length){
@@ -561,7 +588,7 @@
     parsed.forEach((x, i) => {
       if (i > 0) h += `<div style="text-align:center;color:${P.muted};margin:26px 0;letter-spacing:.8em;padding-left:.8em;">✧ ✧ ✧</div>`;
       h += userBlock(x.t, o, P, 'log') + prose(x.body, P, SAY.log(P));
-      h += turnImgsH(x.t, P, o.style);
+      h += turnImgsH(x.t, P, o.style) + altsH(x.t, P, o);
       if (multi && i > 0) h += situ(x.meta, P, `<span style="color:${P.accent};">상황</span>&nbsp; `);
       const heart = o.heart && x.meta.heart, stats = o.stats ? x.meta.stats : [];
       if (heart || stats.length){
@@ -605,7 +632,7 @@
       if (multi) h += `<div style="font-family:${SR()};font-weight:700;font-size:15px;color:${P.accent};margin:${i ? 34 : 0}px 0 12px;">${ROMAN[i] || i + 1}.</div>`;
       if (multi && i > 0) h += situ(x.meta, P);
       h += userBlock(x.t, o, P, 'score') + prose(x.body, P, SAY.score(P));
-      h += turnImgsH(x.t, P, o.style);
+      h += turnImgsH(x.t, P, o.style) + altsH(x.t, P, o);
       const heart = o.heart && x.meta.heart, stats = o.stats ? x.meta.stats : [];
       if (heart || stats.length){
         h += `<div style="margin:30px 0 0;">`
@@ -640,7 +667,7 @@
       if (i > 0) h += `<div style="text-align:center;color:${P.accent};margin:24px 0;font-size:13px;">❦</div>`;
       if (multi && i > 0) h += situ(x.meta, P);
       h += userBlock(x.t, o, P, 'vow') + prose(x.body, P, SAY.vow(P));
-      h += turnImgsH(x.t, P, o.style);
+      h += turnImgsH(x.t, P, o.style) + altsH(x.t, P, o);
       const heart = o.heart && x.meta.heart, stats = o.stats ? x.meta.stats : [];
       if (heart){
         h += `<div style="margin:28px 6px 0;padding:18px 16px;background:${P.tint};border-radius:8px;text-align:center;">`
@@ -684,7 +711,7 @@
       if (multi) h += `<div style="text-align:center;font-family:${SR()};font-weight:700;font-size:15px;letter-spacing:.3em;color:${P.accent};margin:${i ? 34 : 0}px 0 16px;">第${hanNum(i + 1)}回</div>`;
       if (multi && i > 0) h += situ(x.meta, P);
       h += userBlock(x.t, o, P, 'wuxia') + prose(x.body, P, SAY.wuxia(P));
-      h += turnImgsH(x.t, P, o.style);
+      h += turnImgsH(x.t, P, o.style) + altsH(x.t, P, o);
       const heart = o.heart && x.meta.heart, stats = o.stats ? x.meta.stats : [];
       if (heart){
         h += `<div style="margin:28px 0 0;padding:4px 0 4px 16px;border-left:3px solid ${P.accent};">`
@@ -726,7 +753,7 @@
       if (multi) h += `<div style="text-align:center;font-family:${GM()};font-size:14px;color:${P.accent};margin:${i ? 32 : 0}px 0 14px;">─ ${i + 1}장 ─</div>`;
       if (multi && i > 0) h += situ(x.meta, P);
       h += userBlock(x.t, o, P, 'game') + prose(x.body, P, SAY.game(P));
-      h += turnImgsH(x.t, P, o.style);
+      h += turnImgsH(x.t, P, o.style) + altsH(x.t, P, o);
       const heart = o.heart && x.meta.heart, stats = o.stats ? x.meta.stats : [];
       if (heart){
         h += `<div style="margin:26px 0 0;padding:14px 16px;border:1px dashed ${P.accent};border-radius:6px;text-align:center;">`
@@ -770,7 +797,7 @@
       if (multi) h += `<div style="margin:${i ? 30 : 0}px 0 14px;"><span style="display:inline-block;padding:2px 10px;border:1px solid ${P.accent};border-radius:999px;font-family:${GM()};font-size:12px;color:${P.accent};">#${i + 1} 클립</span></div>`;
       if (multi && i > 0) h += situ(x.meta, P);
       h += userBlock(x.t, o, P, 'stream') + prose(x.body, P, SAY.stream(P));
-      h += turnImgsH(x.t, P, o.style);
+      h += turnImgsH(x.t, P, o.style) + altsH(x.t, P, o);
       const heart = o.heart && x.meta.heart, stats = o.stats ? x.meta.stats : [];
       if (heart){
         h += `<div style="margin:26px 0 0;padding:12px 14px;background:${P.tint2};border:1px solid ${P.line};border-left:4px solid ${P.accent};border-radius:8px;">`
@@ -815,7 +842,7 @@
       if (multi) h += `<div style="font-family:${MO};font-size:12px;color:${P.muted};margin:${i ? 28 : 0}px 0 10px;">─ 기록 ${i + 1} ─</div>`;
       if (multi && i > 0) h += situ(x.meta, P);
       h += userBlock(x.t, o, P, 'request') + prose(x.body, P, SAY.request(P));
-      h += turnImgsH(x.t, P, o.style);
+      h += turnImgsH(x.t, P, o.style) + altsH(x.t, P, o);
       const heart = o.heart && x.meta.heart, stats = o.stats ? x.meta.stats : [];
       if (heart){
         h += `<div style="margin:26px 0 0;padding:14px 16px;border:1px dashed ${P.ink};border-radius:2px;">`
@@ -864,30 +891,101 @@
     t = t || { user:'', reply:'' };
     const n = ++seq;
     const d = document.createElement('div'); d.className = 'turn';
-    d.innerHTML = `<div class="turn-head"><b></b><button class="btn small danger" type="button">이 턴 빼기</button></div>
+    d.innerHTML = `<div class="turn-head"><span class="grip" title="끌어서 순서 바꾸기" aria-hidden="true">⠿</span><b></b>
+        <span class="moves"><button class="btn small mv-up" type="button" aria-label="위로">↑</button><button class="btn small mv-dn" type="button" aria-label="아래로">↓</button><button class="btn small danger rm" type="button">이 턴 빼기</button></span></div>
       <div><label class="f" for="u${n}">내가 보낸 메시지 (선택)</label><textarea class="tu" id="u${n}" rows="3"></textarea></div>
       <div><label class="f" for="a${n}">AI 답변</label><textarea class="ta" id="a${n}" rows="9"></textarea></div>
-      <div><label class="f" for="i${n}">이 턴 아래 삽화 (선택)</label><textarea class="ti" id="i${n}" rows="1" placeholder="그림 주소 | 설명"></textarea></div>`;
+      <div><label class="f" for="i${n}">이 턴 아래 삽화 (선택)</label><textarea class="ti" id="i${n}" rows="1" placeholder="그림 주소 | 설명"></textarea></div>
+      <div class="alts"></div>
+      <div><button class="btn small add-alt" type="button">샛길 추가</button></div>`;
     d.querySelector('.tu').value = t.user || '';
     d.querySelector('.ta').value = t.reply || '';
     d.querySelector('.ti').value = Array.isArray(t.images) ? t.images.map(x => x.src + (x.cap ? ' | ' + x.cap : '')).join('\n') : (t.images || '');
-    d.querySelector('.turn-head .btn').addEventListener('click', () => { d.remove(); renumber(); update(); });
+    d.querySelector('.turn-head .rm').addEventListener('click', () => { d.remove(); renumber(); update(); });
+    d.querySelector('.mv-up').addEventListener('click', () => { if (d.previousElementSibling){ d.parentNode.insertBefore(d, d.previousElementSibling); renumber(); update(); d.querySelector('.mv-up').focus(); } });
+    d.querySelector('.mv-dn').addEventListener('click', () => { if (d.nextElementSibling){ d.parentNode.insertBefore(d.nextElementSibling, d); renumber(); update(); d.querySelector('.mv-dn').focus(); } });
+    d.querySelector('.add-alt').addEventListener('click', () => { altBlock(d, null, true); update(); });
+    (Array.isArray(t.alts) ? t.alts : []).forEach(a => altBlock(d, a));
+    gripDrag(d);
     $('turns').appendChild(d);
     renumber();
     if (focus) d.querySelector('.tu').focus();
+  }
+  // 샛길 칸 하나
+  let altSeq = 0;
+  function altBlock(turnEl, a, focus){
+    a = a || { label:'', user:'', reply:'' };
+    const n = ++altSeq;
+    const w = document.createElement('div'); w.className = 'alt';
+    w.innerHTML = `<div class="turn-head"><b>샛길</b><span class="moves"><button class="btn small aswap" type="button">본편으로 올리기</button><button class="btn small danger adel" type="button">빼기</button></span></div>
+      <div><label class="f" for="al${n}">이름 (선택)</label><input type="text" class="al" id="al${n}" placeholder="예: 다시 굴린 답변, IF"></div>
+      <div><label class="f" for="au${n}">내가 보낸 메시지 (선택)</label><textarea class="au" id="au${n}" rows="2"></textarea></div>
+      <div><label class="f" for="ar${n}">AI 답변</label><textarea class="ar" id="ar${n}" rows="5"></textarea></div>`;
+    w.querySelector('.al').value = a.label || '';
+    w.querySelector('.au').value = a.user || '';
+    w.querySelector('.ar').value = a.reply || '';
+    w.querySelector('.adel').addEventListener('click', () => { w.remove(); update(); });
+    w.querySelector('.aswap').addEventListener('click', () => {
+      // 본 턴과 이 샛길을 맞바꾼다
+      const tu = turnEl.querySelector('.tu'), ta = turnEl.querySelector('.ta');
+      const au = w.querySelector('.au'), ar = w.querySelector('.ar'), al = w.querySelector('.al');
+      [tu.value, au.value] = [au.value, tu.value];
+      [ta.value, ar.value] = [ar.value, ta.value];
+      al.value = '이전 본편';
+      update(); say('샛길을 본편으로 올렸어요. 원래 본편은 샛길로 내려갔어요.');
+    });
+    turnEl.querySelector('.alts').appendChild(w);
+    if (focus) w.querySelector('.ar').focus();
+  }
+  // 손잡이(⠿)를 잡고 끌어서 순서를 바꾼다. 마우스와 터치 모두 되고, 화면 끝에 가면 저절로 스크롤된다.
+  function gripDrag(d){
+    const g = d.querySelector('.grip');
+    g.addEventListener('pointerdown', ev => {
+      if (ev.button !== undefined && ev.button !== 0) return;
+      ev.preventDefault();
+      const box = d.parentNode;
+      let y = ev.clientY, raf = 0, on = true;
+      d.classList.add('dragging');
+      const place = () => {
+        const others = [...box.children].filter(x => x !== d);
+        const after = others.find(x => { const r = x.getBoundingClientRect(); return y < r.top + r.height / 2; });
+        if (after){ if (after !== d.nextElementSibling) box.insertBefore(d, after); }
+        else if (box.lastElementChild !== d) box.appendChild(d);
+      };
+      const tick = () => {
+        if (!on) return;
+        const edge = 70, h = window.innerHeight;
+        const sp = y < edge ? -Math.ceil((edge - y) / 4) : y > h - edge ? Math.ceil((y - (h - edge)) / 4) : 0;
+        if (sp){ window.scrollBy(0, sp); place(); }
+        raf = requestAnimationFrame(tick);
+      };
+      const move = e2 => { y = e2.clientY; place(); };
+      const up = () => {
+        on = false; cancelAnimationFrame(raf);
+        document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); document.removeEventListener('pointercancel', up);
+        d.classList.remove('dragging'); renumber(); update();
+      };
+      // 칸을 옮기면 손잡이가 문서 안에서 자리를 바꾸므로, 움직임은 문서 전체에서 듣는다
+      document.addEventListener('pointermove', move); document.addEventListener('pointerup', up); document.addEventListener('pointercancel', up);
+      raf = requestAnimationFrame(tick);
+    });
   }
   function renumber(){
     const all = [...$('turns').children];
     all.forEach((d, i) => {
       d.querySelector('.turn-head b').textContent = all.length > 1 ? '턴 ' + (i + 1) : '장면';
-      d.querySelector('.turn-head .btn').hidden = all.length === 1;
+      d.querySelector('.turn-head .rm').hidden = all.length === 1;
+      d.querySelector('.mv-up').disabled = i === 0;
+      d.querySelector('.mv-dn').disabled = i === all.length - 1;
+      d.querySelector('.grip').hidden = all.length === 1;
     });
   }
   const FIELDS = { eyebrow:'fEyebrow', title:'fTitle', when:'fWhen', place:'fPlace', me:'fMe', partner:'fPartner', ship:'fShip', captain:'fCaptain', no:'fNo', dest:'fDest', tags:'fTags', yt:'fYt', cover:'fCover', gallery:'fGallery' };
   function read(){
     const data = {};
     Object.keys(FIELDS).forEach(k => data[k] = $(FIELDS[k]).value.trim());
-    data.turns = [...$('turns').children].map(d => ({ user:d.querySelector('.tu').value, reply:d.querySelector('.ta').value, images:d.querySelector('.ti').value }))
+    data.turns = [...$('turns').children].map(d => ({ user:d.querySelector('.tu').value, reply:d.querySelector('.ta').value, images:d.querySelector('.ti').value,
+      alts:[...d.querySelectorAll('.alt')].map(w => ({ label:w.querySelector('.al').value.trim(), user:w.querySelector('.au').value, reply:w.querySelector('.ar').value })).filter(a => a.user.trim() || a.reply.trim()) }))
       .filter(t => t.user.trim() || t.reply.trim());
     if (!data.turns.length) data.turns = [{ user:'', reply:'' }];
     return data;
@@ -1011,6 +1109,7 @@
     const btn = $('imgBtn'); btn.disabled = true; btn.textContent = '그리는 중…';
     const box = document.createElement('div'); box.className = 'render-box';
     box.innerHTML = build(data, Object.assign(opts(), { fold:false, webfont:false }));
+    box.querySelectorAll('details[data-alt]').forEach(dt => { if ($('oAltImg').checked) dt.open = true; else dt.remove(); });
     document.body.appendChild(box);
     try{
       try{ await document.fonts.ready; }catch(e){}
