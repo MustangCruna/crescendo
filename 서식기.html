@@ -267,7 +267,15 @@
   let isSample = true;
 
   /* ---------- 파싱 ---------- */
-  const isBracket = s => /^\[.*\]$/.test(s);
+  const unwrapMeta = s => { const t = String(s || '').trim(), m = t.match(/^[*_~]+\s*(\[[\s\S]*\])\s*[*_~]+$/); return m ? m[1] : t; };   // *[ … ]* 처럼 감싼 정보 줄도 알아본다
+  const isBracket = s => /^\[.*\]$/.test(unwrapMeta(s));
+  // [날짜 / 장소 / 요약] 나누기: 빗금 앞뒤 띄어쓰기가 빠져도, '상황:' 같은 이름표가 붙어도 알아본다
+  const splitMeta = inner => {
+    let parts = inner.split(/\s+\/\s+/);
+    if (parts.length === 1){ const m = inner.match(/^(.*?\d{4}[-.\/]\d{1,2}[-.\/]\d{1,2}[^\/]*?)\s*\/\s*([\s\S]*)$/); if (m) parts = [m[1]].concat(m[2].split(/\s*\/\s*/)); }
+    else if (parts.length === 2 && parts[1].includes('/')){ const i = parts[1].indexOf('/'); parts = [parts[0], parts[1].slice(0, i), parts[1].slice(i + 1)]; }
+    return parts.map(p => p.trim().replace(/^(상황|요약|장소|위치|일시|시간|날짜)\s*[:：]\s*/, ''));
+  };
   const isStarLine = s => /^\*[^*]+\*$/.test(s);
   const isBgm = s => isStarLine(s) && / [-–—] /.test(s);
   function splitTop(s){
@@ -300,12 +308,12 @@
     }
     const meta = { heart:'', heartLabel:'', when:'', place:'', summary:'', stats:[], bgm:'', extra:[] };
     metaLines.forEach(l => {
-      const t = l.trim();
+      const t = unwrapMeta(l);
       if (!t) return;
       if (isBracket(t)){
         const inner = t.slice(1, -1).trim();
         if (!meta.when && /\d{4}[-.\/]\d{1,2}[-.\/]\d{1,2}/.test(inner)){
-          const parts = inner.split(/\s+\/\s+/);
+          const parts = splitMeta(inner);
           meta.when = parts[0] || ''; meta.place = parts[1] || ''; meta.summary = parts.slice(2).join(' / ');
           return;
         }
