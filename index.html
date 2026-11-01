@@ -548,9 +548,10 @@
       <label for="cfgRoute">항로</label>
       <select id="cfgRoute"></select>
     </div>
-    <div id="cfgNewWrap" hidden>
-      <label for="cfgNew">새 항로 이름</label>
+    <div id="cfgNewWrap">
+      <label for="cfgNew" id="cfgNewLabel">항로 이름</label>
       <input id="cfgNew" type="text" placeholder="일지의 ‘항로’ 칸에 적는 이름과 똑같이">
+      <p class="hint" id="cfgNewHint" hidden>이름을 고쳐 쓰고 저장하면 이 항로의 일지들도 모두 새 이름으로 옮겨가요.</p>
     </div>
     <div class="two">
       <div>
@@ -2699,9 +2700,10 @@
   }
   function fillCfg(name){
     const isNew = name === NEW_ROUTE;
-    $('cfgNewWrap').hidden = !isNew;
+    $('cfgNewLabel').textContent = isNew ? '새 항로 이름' : '항로 이름';
+    $('cfgNewHint').hidden = isNew;
     const r = (!isNew && store.routes[name]) || { guide:'', kicker:'', destination:'', motto:'', crew:[] };
-    $('cfgNew').value = '';
+    $('cfgNew').value = isNew ? '' : name;
     $('cfgGuide').value = r.guide; $('cfgKicker').value = r.kicker; $('cfgDest').value = r.destination; $('cfgMotto').value = r.motto || '';
     const cs = $('cfgStyle'); cs.replaceChildren();
     [['', '정하지 않음 (방문자가 고른 서식)']].concat(READ_STYLES).forEach(([v, t]) => { const o = document.createElement('option'); o.value = v; o.textContent = t; cs.appendChild(o); });
@@ -2731,16 +2733,26 @@
   $('cfgSheet').addEventListener('click', ev => { if (ev.target === $('cfgSheet')) closeCfg(); });
   document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && !$('cfgSheet').hidden) closeCfg(); });
   $('cfgSave').addEventListener('click', () => {
-    let name = $('cfgRoute').value;
-    if (name === NEW_ROUTE){
-      name = $('cfgNew').value.trim();
-      if (!name){ alert('새 항로 이름을 적어주세요.'); $('cfgNew').focus(); return; }
+    const picked = $('cfgRoute').value;
+    const name = $('cfgNew').value.trim();
+    if (!name){ alert('항로 이름을 적어주세요.'); $('cfgNew').focus(); return; }
+    let renamed = 0;
+    if (picked !== NEW_ROUTE && name !== picked){
+      // 항로 이름 바꾸기: 일지들의 항로와 항로 설정을 함께 옮긴다
+      const taken = store.entries.some(e => e.route === name) || !!store.routes[name];
+      if (taken && !confirm('‘' + name + '’ 항로가 이미 있어요. 두 항로를 하나로 합칠까요?\n(설정은 지금 화면의 내용으로 저장돼요)')) return;
+      if (!taken && !confirm('‘' + picked + '’ 항로 이름을 ‘' + name + '’(으)로 바꿀까요?\n이 항로의 일지들도 모두 새 이름으로 옮겨가요.')) return;
+      store.entries.forEach(e => { if (e.route === picked){ e.route = name; renamed++; } });
+      delete store.routes[picked];
+      if (routeFilter === picked) routeFilter = name;
     }
     const crew = [...$('cfgCrew').children].map(r => ({ name:r.querySelector('.mn').value.trim(), note:r.querySelector('.mt').value.trim() })).filter(m => m.name);
     const v = { guide:$('cfgGuide').value.trim(), kicker:$('cfgKicker').value.trim(), destination:$('cfgDest').value.trim(), motto:$('cfgMotto').value.trim(), style:$('cfgStyle').value, crew };
     if (!v.guide && !v.kicker && !v.destination && !v.motto && !v.style && !crew.length) delete store.routes[name];
     else store.routes[name] = v;
-    persist('‘' + name + '’ 항로 설정을 저장했어요');
+    persist(renamed || (picked !== NEW_ROUTE && name !== picked)
+      ? '‘' + picked + '’ → ‘' + name + '’ 이름을 바꿨어요' + (renamed ? ' (일지 ' + renamed + '편)' : '')
+      : '‘' + name + '’ 항로 설정을 저장했어요');
     closeCfg();
     showList();
   });
