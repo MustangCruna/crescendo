@@ -409,6 +409,7 @@
         <button class="btn" id="routeCfgBtn" type="button">항로 설정</button>
         <button class="btn" id="renameBtn" type="button">제목 바꾸기</button>
         <button class="btn" id="exportBtn" type="button">파일로 백업</button>
+        <button class="btn" id="secretBtn" type="button">🔒 비밀 파일 받기</button>
         <button class="btn" id="txtBtn" type="button">전체 txt 백업</button>
         <button class="btn" id="importBtn" type="button">백업 불러오기</button>
         <input type="file" id="importFile" accept=".json,application/json" hidden>
@@ -496,6 +497,13 @@
       <label for="fGallery">맨 아래 모아보기 삽화 (선택)</label>
       <textarea id="fGallery" rows="2" placeholder="한 줄에 하나씩: img/파일.jpg | 설명"></textarea>
       <p class="hint">그림은 저장소에 올린 파일 이름(img/a.jpg)이나 https:// 주소를 적어요. 설명은 | 뒤에, 없으면 생략해도 돼요.</p>
+    </div>
+    <div>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input id="fSecret" type="checkbox" style="width:auto;margin:0">
+        🔒 비공개 (나만 보기)
+      </label>
+      <p class="hint">체크하면 ‘data.json 받기’에서 빠지고 ‘🔒 비밀 파일 받기’로만 받아져요. 비공개 저장소에 따로 올려 두세요.</p>
     </div>
     <div class="row">
       <button class="btn" id="cancelBtn" type="button">취소</button>
@@ -687,9 +695,11 @@
     let turns = [];
     if (Array.isArray(x.turns)) turns = x.turns.filter(t => t && (typeof t.reply === 'string' || typeof t.user === 'string')).map(cleanTurn);
     else if (typeof x.reply === 'string') turns = [cleanTurn(x)];   // 예전 형식
-    return { id:String(x.id || newId()), title:String(x.title || ''), route:String(x.route || '').trim(),
+    const o = { id:String(x.id || newId()), title:String(x.title || ''), route:String(x.route || '').trim(),
              voyage:String(x.voyage || '').trim(), turns, added:Number(x.added) || 0,
              yt:String(x.yt || '').trim(), cover:cleanImgs(x.cover).slice(0, 1), gallery:cleanImgs(x.gallery) };
+    if (x.secret === true) o.secret = true;   // 비공개 일지: data.json에는 안 들어가고 비밀 파일로만 받아짐
+    return o;
   }
   const cleanAll = arr => (Array.isArray(arr) ? arr : []).filter(x => x && typeof x === 'object').map(cleanEntry).filter(e => e.turns.length);
 
@@ -1057,7 +1067,7 @@
     if (partNo) m.appendChild(el('span', 'part', partNo + '편'));
     m.appendChild(document.createTextNode([inf.when, inf.place].filter(Boolean).join(', ') || '일시 미상'));
     if (e.route && !partNo) m.appendChild(el('span', 'tag', e.route));
-    const t = el('span', 'ttl', titleOf(e, inf));
+    const t = el('span', 'ttl', (e.secret ? '🔒 ' : '') + titleOf(e, inf));
     if (e.turns.length > 1) t.appendChild(el('span', 'count', e.turns.length + '턴'));
     b.append(m, t);
     if (inf.heart) b.appendChild(el('span', 'heart', inf.heart));
@@ -1109,7 +1119,7 @@
       [...new Set(u.items.map(x => x.route).filter(Boolean))].forEach(r => m.appendChild(el('span', 'tag', r)));
       m.appendChild(el('span', 'chev', '▾'));
       const t = el('span', 'ttl', u.name);
-      t.appendChild(el('span', 'count', u.items.length + '편 연속 항해'));
+      t.appendChild(el('span', 'count', u.items.length + '편 연속 항해' + (u.items.some(x => x.secret) ? ' · 🔒 ' + u.items.filter(x => x.secret).length : '')));
       b.append(m, t);
       let heart = '';
       for (let i = u.items.length - 1; i >= 0; i--){ const h = info(u.items[i]).heart; if (h){ heart = h; break; } }
@@ -1520,6 +1530,7 @@
     $('fYt').value = e ? (e.yt || '') : '';
     $('fCover').value = e ? imgsText(e.cover) : '';
     $('fGallery').value = e ? imgsText(e.gallery) : '';
+    $('fSecret').checked = e ? e.secret === true : preset.secret === true;
     lastFocus = document.activeElement;
     $('sheet').hidden = false;
     $('sheet').querySelector('.panel').scrollTop = 0;
@@ -1548,12 +1559,16 @@
                    yt:$('fYt').value.trim(), cover:FMT.toImgs($('fCover').value).slice(0, 1), gallery:FMT.toImgs($('fGallery').value) };
     if (data.yt && !FMT.ytId(data.yt)){ toast('유튜브 주소를 알아보지 못했어요. 영상 주소를 그대로 붙여넣어 주세요'); $('fYt').focus(); return; }
     let id = editingId;
+    let target;
     if (id){
-      Object.assign(store.entries.find(x => x.id === id), data);
+      target = store.entries.find(x => x.id === id);
+      Object.assign(target, data);
     } else {
       id = newId();
-      store.entries.push(Object.assign({ id, added:Date.now() }, data));
+      target = Object.assign({ id, added:Date.now() }, data);
+      store.entries.push(target);
     }
+    if ($('fSecret').checked) target.secret = true; else delete target.secret;
     if (!persist(editingId ? '일지를 고쳤어요' : '일지를 기록했어요')) return;
     closeEditor();
     renderHero();
@@ -1575,7 +1590,7 @@
       e.voyage = v.trim();
       persist('연속 항해로 묶었어요');
     }
-    openEditor(null, { voyage:e.voyage, route:e.route });
+    openEditor(null, { voyage:e.voyage, route:e.route, secret:e.secret === true });
   });
   $('delBtn').addEventListener('click', () => {
     if (!currentId || !confirm('이 일지를 지울까요? 백업 파일이 없으면 되돌릴 수 없어요.')) return;
@@ -2768,15 +2783,32 @@
   $('orderBtn').addEventListener('click', () => { newestFirst = !newestFirst; renderList(); });
   $('search').addEventListener('input', renderList);
 
+  let secretFileLoaded = false;   // 이번에 비밀 파일을 불러왔는지
+  function downloadJson(obj, name){
+    const blob = new Blob([JSON.stringify(obj, null, 2)], { type:'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }
   $('exportBtn').addEventListener('click', () => {
     const d = new Date();
     const stamp = d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
-    const blob = new Blob([JSON.stringify(store, null, 2)], { type:'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = useRemote ? 'data.json' : '항해일지-' + stamp + '.json';
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    const pub = store.entries.filter(x => !x.secret);
+    const hidden = store.entries.length - pub.length;
+    downloadJson(Object.assign({}, store, { entries:pub }), useRemote ? 'data.json' : '항해일지-' + stamp + '.json');
+    if (hidden) toast('🔒 비공개 ' + hidden + '편은 빼고 받았어요');
+  });
+  $('secretBtn').addEventListener('click', () => {
+    const sec = store.entries.filter(x => x.secret);
+    if (!sec.length){ alert('비공개로 체크한 일지가 없어요.'); return; }
+    if (!secretFileLoaded && !confirm(
+      '아직 기존 비밀 파일(secret.json)을 ‘백업 불러오기’로 불러오지 않았어요.\n\n' +
+      '이대로 받으면 지금 보이는 비공개 ' + sec.length + '편만 들어가요. 비공개 저장소의 secret.json을 이걸로 덮어쓰면 예전 비밀 일지가 사라져요.\n\n' +
+      '처음 만드는 거라면 그대로 받아도 괜찮아요. 받을까요?')) return;
+    downloadJson({ title:store.title, entries:sec, routes:store.routes }, 'secret.json');
+    toast('🔒 비공개 ' + sec.length + '편을 secret.json으로 받았어요');
   });
   $('importBtn').addEventListener('click', () => $('importFile').click());
   $('importFile').addEventListener('change', ev => {
@@ -2788,9 +2820,15 @@
       let o;
       try{ o = JSON.parse(r.result); }catch(e){ alert('항해일지 백업 파일(.json)이 아니에요.'); return; }
       if (!o || !Array.isArray(o.entries)){ alert('항해일지 백업 파일(.json)이 아니에요.'); return; }
+      if (o.entries.some(x => x && x.secret === true)) secretFileLoaded = true;
+      // 이미 있는 일지인데 백업에서 비공개로 표시돼 있으면 비공개로 맞춰 둔다
+      const secIds = new Set(o.entries.filter(x => x && x.secret === true).map(x => String(x.id)));
+      let marked = 0;
+      store.entries.forEach(x => { if (secIds.has(x.id) && !x.secret){ x.secret = true; marked++; } });
+      if (marked) renderList();
       const have = new Set(store.entries.map(x => x.id));
       const add = cleanAll(o.entries).filter(x => !have.has(x.id)).map(x => { if (!x.added) x.added = Date.now(); return x; });
-      if (!add.length){ alert('새로 더할 일지가 없어요. 이미 다 들어 있어요.'); return; }
+      if (!add.length){ alert(marked ? '이미 있던 ' + marked + '편을 🔒 비공개로 표시했어요.' : '새로 더할 일지가 없어요. 이미 다 들어 있어요.'); return; }
       if (!confirm('백업에서 ' + add.length + '편의 일지를 지금 기록에 더할까요?')) return;
       store.entries = store.entries.concat(add);
       const inc = cleanRoutes(o.routes);
@@ -2803,7 +2841,7 @@
   });
 
   /* ---------- 시작 ---------- */
-  if (useRemote) $('exportBtn').textContent = 'data.json 받기';
+  if (useRemote) $('exportBtn').textContent = 'data.json 받기 (공개용)';
   applyEditMode();
   showList();
   if (useRemote) loadRemote(); else applyUrl();
