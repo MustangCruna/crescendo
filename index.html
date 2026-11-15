@@ -1706,9 +1706,12 @@
     phFolder = first ? first[0] : '';
     phPaint();
   }
-  function phNewFolder(){
+  // 폴더 이름은 첫 사진 파일에서 만든다: 같은 사진을 다시 넣어도 같은 폴더가 돼서, 먼저 받은 zip 과 어긋나지 않는다
+  async function phNewFolder(file){
     const d = new Date(), p = n => String(n).padStart(2, '0');
-    return 'img/ooc/' + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + Math.random().toString(36).slice(2, 6);
+    let tag = Math.random().toString(36).slice(2, 6);
+    try{ tag = crc32(new Uint8Array(await file.arrayBuffer())).toString(36).padStart(6, '0').slice(-6); }catch(e){}
+    return 'img/ooc/' + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + tag;
   }
   function phPaint(){
     const list = phLines(), pend = phPending();
@@ -1734,7 +1737,7 @@
   async function phAdd(files){
     files = [...files].filter(f => /^image\//.test(f.type)).sort(natural);
     if (!files.length) return;
-    if (!phFolder) phFolder = phNewFolder();
+    if (!phFolder) phFolder = await phNewFolder(files[0]);
     let n = new Set(phLines().filter(x => x.src.startsWith(phFolder + '/')).map(x => (x.src.slice(phFolder.length + 1).match(/^\d+/) || [x.src])[0])).size;
     const lines = [];
     $('phState').textContent = '사진 바꾸는 중… 0 / ' + files.length;
