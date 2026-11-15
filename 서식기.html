@@ -100,6 +100,12 @@
   .img-out{ margin-top:16px; padding-top:14px; border-top:1px solid var(--line); display:flex; flex-direction:column; gap:8px; }
   .img-frame{ border:1px solid var(--line); border-radius:12px; padding:10px; background:#fff; max-height:70vh; overflow:auto; }
   .img-frame img{ display:block; width:100%; height:auto; }
+  .ph-ed{ border:1px dashed var(--line); border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:8px; }
+  .ph-drop{ border:1px dashed var(--accent); border-radius:10px; padding:14px; text-align:center; font-size:.85rem; color:var(--muted); }
+  .ph-drop.on{ background:color-mix(in srgb, var(--accent) 12%, transparent); }
+  .ph-drop .btn{ margin-left:6px; }
+  .ph-tools{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .ph-tools span{ font-size:.78rem; color:var(--muted); }
   .render-box{ position:absolute; left:-10000px; top:0; width:640px; background:transparent; }
   @media (max-width:900px){ .preview-wrap{ position:static; } .stage{ max-height:none; } }
 </style>
@@ -152,6 +158,22 @@
 
       <div class="stack" id="turns"></div>
       <div><button class="btn" id="addTurn" type="button">턴 추가</button></div>
+      <div class="ph-ed">
+        <label class="f" for="fPhotos">📷 사진으로 된 OOC (선택)</label>
+        <div class="ph-drop" id="phDrop">캡처를 여기로 끌어오거나<button class="btn" id="phPick" type="button">사진 고르기</button>
+          <input id="phFiles" type="file" accept="image/*" multiple hidden></div>
+        <textarea id="fPhotos" rows="3" placeholder="한 줄에 하나씩: 사진 주소 | 설명&#10;예: img/ooc/20261115-ab12/01.webp | 첫 장"></textarea>
+        <div class="two">
+          <div><label class="f" for="fPhotoLayout">보여 주는 모양</label>
+            <select id="fPhotoLayout">
+              <option value="scroll">세로 연재 (캡처를 이어 읽기)</option>
+              <option value="slide">옆으로 넘기기</option>
+              <option value="scrap">스크랩북 (폴라로이드)</option>
+            </select></div>
+          <div class="ph-tools" style="align-self:end"><button class="btn" id="phZip" type="button" disabled>📦 새 사진 묶음 받기</button><span id="phState"></span></div>
+        </div>
+        <p class="hint">사진만 넣어도 서식이 만들어져요. 새로 넣은 사진은 폭 1080px webp 로 바뀌고(긴 캡처는 알아서 나눠요), zip 을 풀어 나온 <b>img</b> 폴더를 서식기 저장소 ‘Add file → Upload files’ 에 통째로 올리면 게시판에서도 보여요. 이미 올린 사진이나 https:// 주소는 그대로 적어도 돼요.</p>
+      </div>
       <div><label class="f" for="fGallery">맨 아래 모아보기 삽화</label><textarea id="fGallery" rows="2" placeholder="한 줄에 하나씩: 그림 주소 | 설명"></textarea>
         <p class="hint">그림 주소는 https://로 시작하는 공개된 주소여야 블로그에서도 보여요. 설명은 | 뒤에 적고, 없으면 생략해도 돼요.</p></div>
       <p class="hint" style="margin:0">*별표* 줄은 서술, 그 밖의 줄은 대사가 돼요. 답변 맨 아래 --- 뒤의 [ ] 줄은 일시·장소·속마음·수치로, *곡명 - 가수* 줄은 BGM으로 정리돼요.</p>
@@ -462,8 +484,48 @@
   }
   function coverH(data, P, kind){
     const c = toImgs(data.cover)[0];
-    if (!c) return '';
-    return `<div style="margin:0 0 26px;">${imgTag(c, kind === 'letter' ? 3 : 8)}${capH(c.cap, P, kind)}</div>`;
+    return (c ? `<div style="margin:0 0 26px;">${imgTag(c, kind === 'letter' ? 3 : 8)}${capH(c.cap, P, kind)}</div>` : '') + photosH(data, P, kind);
+  }
+  /* ---------- 사진으로 된 OOC (11/15) ----------
+     게시판에는 스크립트가 못 들어가서 전부 인라인 스타일로: 세로 연재 · 옆으로 넘기기(가로 스크롤) · 스크랩북.
+     긴 캡처를 나눈 조각(01-1, 01-2 …)은 세로 연재에서 틈 없이 한 장처럼 붙인다. */
+  function photosH(data, P, kind){
+    const list = toImgs(data.photos);
+    if (!list.length) return '';
+    const lay = data.playout || 'scroll';
+    const pic = (img, r, extra) => `<img src="${esc(img.src)}" alt="${esc(img.cap || '사진')}" loading="lazy" style="display:block;width:100%;height:auto;margin:0;border:0;border-radius:${r};${extra || ''}">`;
+    let h = `<div style="margin:0 0 30px;">`
+      + `<div style="font-family:${SN()};font-size:12px;letter-spacing:.06em;color:${P.accent};margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid ${P.line};">📷 사진 기록 · ${list.length}장</div>`;
+    if (lay === 'slide'){
+      h += `<div style="overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory;font-size:0;line-height:0;padding-bottom:6px;">`
+        + list.map((img, i) => `<div style="display:inline-block;width:86%;margin-right:${i === list.length - 1 ? 0 : 3}%;vertical-align:top;white-space:normal;scroll-snap-align:center;font-size:16px;line-height:1.6;">`
+          + `<div style="padding:6px;border:1px solid ${P.line};border-radius:10px;background:${P.tint};">${pic(img, '6px')}</div>`
+          + `<div style="margin-top:4px;font-family:${SN()};font-size:12px;color:${P.muted};">${i + 1} / ${list.length}${img.cap ? ' · ' + esc(img.cap) : ''}</div></div>`).join('')
+        + `</div><div style="text-align:center;font-family:${SN()};font-size:11px;color:${P.muted};margin-top:4px;">← 옆으로 넘겨 보세요 →</div>`;
+    } else if (lay === 'scrap'){
+      const rot = ['-1.6deg', '1.4deg', '-.5deg', '1deg'];
+      h += `<div style="font-size:0;line-height:0;text-align:center;">`
+        + list.map((img, i) => `<div style="display:inline-block;width:44%;margin:8px 2.5% 14px;vertical-align:top;font-size:16px;line-height:1.4;background:#f7f1e6;padding:7px 7px 6px;border-radius:2px;box-shadow:0 5px 14px rgba(0,0,0,.28);transform:rotate(${rot[i % 4]});box-sizing:border-box;">`
+          + pic(img, '0', 'aspect-ratio:3/4;object-fit:cover;object-position:top;')
+          + (img.cap ? `<div style="padding-top:5px;font-family:${HD()};font-size:17px;color:#4a3f35;">${esc(img.cap)}</div>` : `<div style="height:14px;"></div>`)
+          + `</div>`).join('') + `</div>`;
+    } else {
+      // 세로 연재: 조각끼리 묶기
+      const groups = [];
+      list.forEach(img => {
+        const m = img.src.match(/^(.*\/\d+)-\d+(\.\w+)(?:[?#].*)?$/);
+        const k = m ? m[1] + m[2] : null, last = groups[groups.length - 1];
+        if (k && last && last.k === k) last.items.push(img); else groups.push({ k, items:[img] });
+      });
+      const frame = kind === 'letter' ? `background:#ffffff;border:1px solid ${P.line};border-radius:3px;padding:8px;` : `background:${P.tint};border:1px solid ${P.line};border-left:3px solid ${P.accent};border-radius:10px;padding:8px;`;
+      h += groups.map(g => {
+        const n = g.items.length;
+        const imgs = g.items.map((img, i) => pic(img, n === 1 ? '6px' : i === 0 ? '6px 6px 0 0' : i === n - 1 ? '0 0 6px 6px' : '0')).join('');
+        const caps = g.items.map(x => x.cap).filter(Boolean).join(' · ');
+        return `<div style="max-width:560px;margin:0 auto 14px;${frame}box-sizing:border-box;">${imgs}${caps ? `<div style="padding:6px 2px 0;font-family:${SN()};font-size:12px;color:${P.muted};">${esc(caps)}</div>` : ''}</div>`;
+      }).join('');
+    }
+    return h + `</div>`;
   }
   function turnImgsH(t, P, kind){ return toImgs(t.images).map(img => imgH(img, P, kind)).join(''); }
   function galleryH(data, P, kind){
@@ -805,6 +867,7 @@
       h += `<div style="margin:0 0 24px;border:1px solid ${P.line};border-radius:10px;overflow:hidden;background:#000000;">${imgTag(cv, 0)}`
         + (cv.cap ? `<div style="padding:6px 10px;font-family:${SN()};font-size:12px;color:${P.muted};background:${P.tint};">${esc(cv.cap)}</div>` : '') + `</div>`;
     }
+    h += photosH(data, P, o.style);
     parsed.forEach((x, i) => {
       if (multi) h += `<div style="margin:${i ? 30 : 0}px 0 14px;"><span style="display:inline-block;padding:2px 10px;border:1px solid ${P.accent};border-radius:999px;font-family:${GM()};font-size:12px;color:${P.accent};">#${i + 1} 클립</span></div>`;
       if (multi && i > 0) h += situ(x.meta, P);
@@ -1095,7 +1158,7 @@
       d.querySelector('.grip').hidden = all.length === 1;
     });
   }
-  const FIELDS = { eyebrow:'fEyebrow', title:'fTitle', when:'fWhen', place:'fPlace', me:'fMe', partner:'fPartner', ship:'fShip', captain:'fCaptain', no:'fNo', dest:'fDest', tags:'fTags', yt:'fYt', cover:'fCover', gallery:'fGallery' };
+  const FIELDS = { eyebrow:'fEyebrow', title:'fTitle', when:'fWhen', place:'fPlace', me:'fMe', partner:'fPartner', ship:'fShip', captain:'fCaptain', no:'fNo', dest:'fDest', tags:'fTags', yt:'fYt', cover:'fCover', gallery:'fGallery', photos:'fPhotos', playout:'fPhotoLayout' };
   function read(){
     const data = {};
     Object.keys(FIELDS).forEach(k => data[k] = $(FIELDS[k]).value.trim());
@@ -1106,7 +1169,7 @@
     return data;
   }
   function fill(data){
-    Object.keys(FIELDS).forEach(k => $(FIELDS[k]).value = data[k] || '');
+    Object.keys(FIELDS).forEach(k => $(FIELDS[k]).value = data[k] || (k === 'playout' ? 'scroll' : ''));
     $('turns').replaceChildren();
     (data.turns && data.turns.length ? data.turns : [null]).forEach(t => turnBlock(t));
   }
@@ -1118,12 +1181,13 @@
   /* ---------- 그리기 ---------- */
   function update(){
     const data = read();
-    const empty = !data.turns.some(t => t.reply.trim() || t.user.trim());
+    const empty = !data.turns.some(t => t.reply.trim() || t.user.trim()) && !data.photos;
     const code = build(data, opts());
     $('out').value = empty ? '' : code;
     $('stage').innerHTML = empty
-      ? '<p style="margin:40px 0;text-align:center;color:#888;font-family:sans-serif;">AI 답변을 붙여넣으면 여기에 편지가 나타나요.</p>'
-      : code;   // esc()를 거친 글자만 들어 있다
+      ? '<p style="margin:40px 0;text-align:center;color:#888;font-family:sans-serif;">AI 답변이나 사진을 넣으면 여기에 편지가 나타나요.</p>'
+      : phPreview(code);   // esc()를 거친 글자만 들어 있다 (아직 안 올린 사진만 이 브라우저 안 주소로 바꿔 보여 줌)
+    phPaint();
     $('exTag').hidden = !isSample;
     save();
   }
@@ -1203,6 +1267,97 @@
     say(ok ? okMsg : '자동 복사가 막혔어요. 코드 칸이 선택돼 있으니 직접 복사해 주세요.');
   }
 
+
+  /* ---------- 사진 넣기 (11/15, 항해일지 #edit 와 같은 방식) ---------- */
+  const PH_FILES = new Map(), PH_BLOB = new Map();   // 저장소 안 이름 → Blob / 미리보기 주소
+  let phFolder = '';
+  const phLines = () => $('fPhotos').value.split('\n').map(l => { const i = l.indexOf('|'); return { src:(i < 0 ? l : l.slice(0, i)).trim(), cap:(i < 0 ? '' : l.slice(i + 1)).trim() }; }).filter(x => x.src);
+  const phPending = () => phLines().filter(x => PH_FILES.has(x.src));
+  function phPreview(html){
+    let out = html;
+    PH_BLOB.forEach((blob, name) => { const abs = safeSrc(name); if (abs) out = out.split('src="' + esc(abs) + '"').join('src="' + blob + '"'); });
+    return out;
+  }
+  function phPaint(){
+    const n = phLines().length, p = phPending().length;
+    $('phZip').disabled = !p;
+    $('phState').textContent = n ? '사진 ' + n + '장' + (p ? ' · 아직 안 올린 새 사진 ' + p + '장' : '') : '';
+  }
+  function phFolderNow(){
+    const first = phLines().map(x => x.src.match(/^img\/ooc\/[^\/]+/)).find(Boolean);
+    if (first) return first[0];
+    const d = new Date(), p = n => String(n).padStart(2, '0');
+    return 'img/ooc/' + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + Math.random().toString(36).slice(2, 6);
+  }
+  async function phDecode(file){
+    try{ return await createImageBitmap(file, { imageOrientation:'from-image' }); }
+    catch(err){ const url = URL.createObjectURL(file); try{ const im = new Image(); im.src = url; await im.decode(); return im; } finally { setTimeout(() => URL.revokeObjectURL(url), 1000); } }
+  }
+  const phBlob = c => new Promise(res => c.toBlob(b => { if (b && b.type === 'image/webp') return res(b); c.toBlob(j => res(j), 'image/jpeg', .88); }, 'image/webp', .86));
+  async function phAdd(files){
+    files = [...files].filter(f => /^image\//.test(f.type)).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric:true, sensitivity:'base' }));
+    if (!files.length) return;
+    phFolder = phFolderNow();
+    let n = new Set(phLines().filter(x => x.src.startsWith(phFolder + '/')).map(x => (x.src.slice(phFolder.length + 1).match(/^\d+/) || [x.src])[0])).size;
+    const lines = [];
+    for (let k = 0; k < files.length; k++){
+      $('phState').textContent = '사진 바꾸는 중… ' + (k + 1) + ' / ' + files.length;
+      let bmp; try{ bmp = await phDecode(files[k]); }catch(err){ say(files[k].name + ' 을(를) 읽지 못했어요'); continue; }
+      const W = bmp.width, H = bmp.height, sc = Math.min(1, 1080 / W), w = Math.round(W * sc), h = Math.round(H * sc);
+      const CH = 3000, parts = h > 4200 ? Math.ceil(h / CH) : 1;
+      n++;
+      for (let i = 0; i < parts; i++){
+        const ph = parts === 1 ? h : Math.min(CH, h - i * CH);
+        const c = document.createElement('canvas'); c.width = w; c.height = ph;
+        const g = c.getContext('2d'); g.imageSmoothingQuality = 'high';
+        g.drawImage(bmp, 0, (i * CH) / sc, W, ph / sc, 0, 0, w, ph);
+        const b = await phBlob(c); if (!b) continue;
+        const name = phFolder + '/' + String(n).padStart(2, '0') + (parts > 1 ? '-' + (i + 1) : '') + (b.type === 'image/webp' ? '.webp' : '.jpg');
+        PH_FILES.set(name, b); PH_BLOB.set(name, URL.createObjectURL(b)); lines.push(name);
+      }
+      if (bmp.close) bmp.close();
+    }
+    const ta = $('fPhotos');
+    ta.value = (ta.value.trim() ? ta.value.replace(/\s+$/, '') + '\n' : '') + lines.join('\n');
+    isSample = false; update();
+    say('사진 ' + lines.length + '장을 넣었어요. 설명은 줄 끝에 | 뒤로 적어요');
+  }
+  const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++){ let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+  const crc32 = u => { let c = 0xFFFFFFFF; for (let i = 0; i < u.length; i++) c = CRC[(c ^ u[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+  async function makeZip(files){   // 압축 없는 zip (webp 는 이미 압축돼 있다)
+    const enc = new TextEncoder(), parts = [], central = []; let off = 0;
+    const d = new Date(), dt = ((d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1)) & 0xFFFF, dd = (((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate()) & 0xFFFF;
+    for (const [name, blob] of files){
+      const data = new Uint8Array(await blob.arrayBuffer()), nm = enc.encode(name), crc = crc32(data);
+      const h = new DataView(new ArrayBuffer(30));
+      h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(10, dt, true); h.setUint16(12, dd, true);
+      h.setUint32(14, crc, true); h.setUint32(18, data.length, true); h.setUint32(22, data.length, true); h.setUint16(26, nm.length, true);
+      parts.push(h, nm, data);
+      const c = new DataView(new ArrayBuffer(46));
+      c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true); c.setUint16(12, dt, true); c.setUint16(14, dd, true);
+      c.setUint32(16, crc, true); c.setUint32(20, data.length, true); c.setUint32(24, data.length, true); c.setUint16(28, nm.length, true); c.setUint32(42, off, true);
+      central.push(c, nm); off += 30 + nm.length + data.length;
+    }
+    const cs = central.reduce((s, x) => s + x.byteLength, 0), e = new DataView(new ArrayBuffer(22));
+    e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true); e.setUint32(12, cs, true); e.setUint32(16, off, true);
+    return new Blob([...parts, ...central, e], { type:'application/zip' });
+  }
+  (() => {
+    const drop = $('phDrop');
+    $('phPick').addEventListener('click', () => $('phFiles').click());
+    $('phFiles').addEventListener('change', ev => { const f = [...ev.target.files]; ev.target.value = ''; phAdd(f); });
+    ['dragenter', 'dragover'].forEach(t => drop.addEventListener(t, ev => { ev.preventDefault(); drop.classList.add('on'); }));
+    ['dragleave', 'drop'].forEach(t => drop.addEventListener(t, ev => { ev.preventDefault(); drop.classList.remove('on'); }));
+    drop.addEventListener('drop', ev => phAdd(ev.dataTransfer.files));
+    $('fPhotoLayout').addEventListener('change', () => update());
+    $('phZip').addEventListener('click', async () => {
+      const pend = phPending(); if (!pend.length) return;
+      const zip = await makeZip(pend.map(x => [x.src, PH_FILES.get(x.src)]));
+      const a = document.createElement('a'); a.href = URL.createObjectURL(zip); a.download = '사진-' + phFolderNow().split('/').pop() + '.zip';
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+      say('zip 을 풀고 img 폴더를 서식기 저장소에 그대로 올려 주세요');
+    });
+  })();
   /* ---------- 연결 ---------- */
   document.addEventListener('input', ev => {
     if (ev.target.closest('.panel')){ if (ev.target.id !== 'out') isSample = false; update(); }
@@ -1221,11 +1376,11 @@
      이미지에서는 접기가 의미가 없어서 내 메시지를 펼친 채로 그린다. */
   $('imgBtn').addEventListener('click', async () => {
     const data = read();
-    if (!data.turns.some(t => t.reply.trim() || t.user.trim())){ say('먼저 AI 답변을 붙여넣으세요.'); return; }
+    if (!data.turns.some(t => t.reply.trim() || t.user.trim()) && !data.photos){ say('먼저 AI 답변이나 사진을 넣으세요.'); return; }
     if (typeof html2canvas !== 'function'){ say('이미지 도구를 불러오지 못했어요. 새로고침한 뒤 다시 눌러 주세요.'); return; }
     const btn = $('imgBtn'); btn.disabled = true; btn.textContent = '그리는 중…';
     const box = document.createElement('div'); box.className = 'render-box';
-    box.innerHTML = build(data, Object.assign(opts(), { fold:false, webfont:false }));
+    box.innerHTML = phPreview(build(data, Object.assign(opts(), { fold:false, webfont:false })));
     box.querySelectorAll('details[data-alt]').forEach(dt => { if ($('oAltImg').checked) dt.open = true; else dt.remove(); });
     document.body.appendChild(box);
     try{
