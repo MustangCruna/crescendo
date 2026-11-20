@@ -2207,6 +2207,8 @@
     { id:'noir',    name:'느와르',   paper:'#171615', ink:'#e6e1d8', muted:'#9b948a', line:'#3a3633', accent:'#c9a24a', tint:'#211f1d', tint2:'#272421', bar:'#302d2a', warn:'#d0544b' },
     { id:'peach',   name:'도원 복숭아', paper:'#fff4f0', ink:'#3b2828', muted:'#8d6f69', line:'#f1d5cc', accent:'#e2786a', tint:'#fde4dc', tint2:'#f3eef0', bar:'#f3d6cd', warn:'#b8323f' },
     { id:'library', name:'만상 서고', paper:'#f3ede1', ink:'#2a2320', muted:'#7f7262', line:'#dccfb8', accent:'#6b2f3a', tint:'#ebe3d3', tint2:'#efe8dc', bar:'#d9ccb4', warn:'#a3332b' },
+    { id:'kitchen', name:'발키리 주방', paper:'#fbf5ea', ink:'#2e2620', muted:'#85725f', line:'#e6d6bd', accent:'#c8794a', tint:'#f4e8d4', tint2:'#efe9df', bar:'#e8d7bc', warn:'#b8323f' },
+    { id:'canopy',  name:'2km 상공', paper:'#0b1626', ink:'#e8e2cf', muted:'#9fb0c2', line:'#22364d', accent:'#e4b45a', tint:'#13243a', tint2:'#1a2a40', bar:'#22364d', warn:'#f2b8c6' },
     { id:'ink',     name:'먹과 인주', paper:'#f8f7f4', ink:'#222020', muted:'#7a7570', line:'#dedad2', accent:'#b03a2e', tint:'#eeece6', tint2:'#f4ece5', bar:'#dcd8cf', warn:'#b03a2e' }
   ];
   const FONTS = {
@@ -2249,6 +2251,8 @@
     stream:(P) => s => `<p style="margin:0 0 1em;text-align:center;"><span style="display:inline-block;max-width:100%;padding:6px 14px;background:#0b0c18;color:#ffffff;border-radius:6px;text-align:left;">${s}</span></p>`,
     request:(P) => s => `<p style="margin:0 0 1em;padding-left:1.3em;text-indent:-1.3em;"><span style="display:inline-block;width:1.3em;text-indent:0;color:${P.accent};">▸</span>${s}</p>`,
     library:(P) => s => `<p style="margin:0 0 1em;padding-left:1.4em;text-indent:-1.4em;"><span style="display:inline-block;width:1.4em;text-indent:0;color:${P.accent};">—</span>${s}</p>`,
+    recipe:(P) => s => `<p style="margin:0 0 1em;">${s}</p>`,
+    qna:(P) => s => `<p style="margin:0 0 1em;text-align:center;">${s}</p>`,
     peach:(P) => s => `<p style="margin:0 0 1em;"><span style="display:inline-block;max-width:100%;padding:4px 14px;background:${P.tint};border:1px solid ${P.line};border-radius:18px;">${s}</span></p>`,
     game:(P) => s => `<div style="margin:0 0 1em;padding:9px 30px 9px 14px;background:${P.tint};border:1px solid ${P.line};border-left:3px solid ${P.accent};border-radius:4px;position:relative;">${s}<span style="position:absolute;right:10px;bottom:6px;font-size:10px;color:${P.accent};">▼</span></div>`
   };
@@ -2330,8 +2334,8 @@
     if (!m && /^[\w-]{11}$/.test(s)) m = [s, s];
     return m ? m[1] : '';
   }
-  const IMG_LABEL = { letter:'함께 넣은 사진', log:'첨부 사진', score:'삽화', vow:'기념 사진', wuxia:'화첩(畵帖)', game:'획득한 일러스트', stream:'방송 캡처', request:'첨부 자료', peach:'도원 화첩', library:'수록 삽화' };
-  const YT_LABEL = { letter:'지금 흐르는 곡', log:'♪ 함내 방송', score:'오늘의 연주곡', vow:'함께 들은 곡', wuxia:'風流, 오늘의 곡', game:'BGM ▶', stream:'방송 BGM', request:'참고 음원', peach:'도원에 흐르는 곡', library:'서고에 흐르는 곡' };
+  const IMG_LABEL = { letter:'함께 넣은 사진', log:'첨부 사진', score:'삽화', vow:'기념 사진', wuxia:'화첩(畵帖)', game:'획득한 일러스트', stream:'방송 캡처', request:'첨부 자료', peach:'도원 화첩', library:'수록 삽화', recipe:'식탁 사진', qna:'수신 사진' };
+  const YT_LABEL = { letter:'지금 흐르는 곡', log:'♪ 함내 방송', score:'오늘의 연주곡', vow:'함께 들은 곡', wuxia:'風流, 오늘의 곡', game:'BGM ▶', stream:'방송 BGM', request:'참고 음원', peach:'도원에 흐르는 곡', library:'서고에 흐르는 곡', recipe:'주방 라디오', qna:'수신 중인 곡' };
   function capH(cap, P, kind){
     if (!cap) return '';
     const font = kind === 'letter' ? `font-family:${HD()};font-size:19px;` : kind === 'score' || kind === 'vow' ? `font-family:${SR()};font-style:italic;font-size:13px;` : `font-family:${SN()};font-size:12px;`;
@@ -2871,14 +2875,258 @@
     return h + `</div>`;
   }
 
-  const BUILDERS = { library:buildLibrary, peach:buildPeach, letter:buildLetter, log:buildLog, score:buildScore, vow:buildVow, wuxia:buildWuxia, game:buildGame, stream:buildStream, request:buildRequest };
+  /* ===== 꼬리표 읽기 (레시피북 · 무물이 같이 씀) =====
+     [이름: 값] 한 줄을 { k:띄어쓰기 뺀 이름, raw:이름, v:값 } 으로. 앞뒤 ** 굵게 표시는 무시. */
+  function tagLine(t){
+    const m = String(t).match(/^\**\s*\[\s*([^\[\]:：]{1,24}?)\s*(?:[:：]\s*([^\]]*?))?\s*\]\s*\**$/);
+    return m ? { k:m[1].replace(/\s+/g, ''), raw:m[1].trim(), v:(m[2] || '').trim() } : null;
+  }
+  const inl = (s, P) => String(s || '').split(/(\*[^*]+\*)/).map(part => /^\*[^*]+\*$/.test(part) ? `<span style="color:${P.muted};">${esc(part.slice(1, -1))}</span>` : esc(part)).join('');
+  const FOOT_TAG = /^(현재|날짜|상황|위치|시간)/;
+
+  /* ===== 레시피북 (발키리 함내 식당 주방 일지) =====
+     **[월]** 이나 [월] 한 줄로 하루를 나누고, 그 아래 [주방 당번] [메뉴] [결과] [그날 있었던 일] [한 줄 평] [레시피] 를 읽는다.
+     요일 없이 [메뉴] [레시피] 만 있는 요리 OOC 한 편도 카드 한 장으로 그린다. */
+  const DAY_KO = { 월:['月','월요일'], 화:['火','화요일'], 수:['水','수요일'], 목:['木','목요일'], 금:['金','금요일'], 토:['土','토요일'], 일:['日','일요일'] };
+  function dayOf(t){
+    const m = t.match(/^(?:\*\*)?\s*\[\s*(월|화|수|목|금|토|일)(?:요일)?\s*\]\s*(?:\*\*)?$/) || t.match(/^\*\*\s*(월|화|수|목|금|토|일)(?:요일)?\s*\*\*$/);
+    return m ? m[1] : '';
+  }
+  const KITCHEN_KEY = [['duty', /^(주방)?당번|^요리사|^셰프/], ['menu', /^메뉴|^요리(이름)?$/], ['result', /^결과/], ['story', /있었던일|^에피소드|^그날/], ['review', /한줄평|^평$|^시식평/], ['recipe', /^레시피|^만드는법|^조리법/]];
+  function kitchenParse(reply){
+    const out = { intro:[], days:[], outro:[], foot:[] };
+    let cur = null, after = [], inFoot = false;
+    const open = day => { cur = { day, tags:{}, extra:[], notes:[] }; out.days.push(cur); };
+    String(reply || '').replace(/\r/g, '').split('\n').forEach(line => {
+      const t = line.trim();
+      if (!t || /^-{3,}$/.test(t)) return;
+      const d = dayOf(t);
+      if (d){ if (cur) cur.notes.push(...after); after = []; inFoot = false; open(d); return; }
+      const g = tagLine(t);
+      if (g && FOOT_TAG.test(g.k)){ out.foot.push(g); inFoot = true; return; }
+      if (inFoot){ out.foot.push({ k:'', raw:'', v:t }); return; }
+      if (g){
+        const key = (KITCHEN_KEY.find(([, re]) => re.test(g.k)) || [''])[0];
+        if (!cur || (after.length && !cur.day) || (key && cur.tags[key] && !cur.day)){ if (cur) cur.notes.push(...after); after = []; open(''); }
+        else if (after.length){ cur.notes.push(...after); after = []; }
+        if (key) cur.tags[key] = g.v; else cur.extra.push(g);
+        return;
+      }
+      if (!cur) out.intro.push(t); else after.push(t);
+    });
+    out.outro = after;
+    return out;
+  }
+  function resultOf(v, P){
+    if (/서윤|특제/.test(v)) return { c:'#b0812a', i:'🐾' };
+    if (/참사|실패|화재/.test(v)) return { c:P.warn, i:'✕' };
+    if (/대성공|성공/.test(v)) return { c:P.accent, i:'★' };
+    return { c:P.muted, i:'○' };
+  }
+  function stepsH(v, P){
+    let fail = 0;
+    const parts = String(v).split(/\s*(?:→|->|⇒|➜|▶)\s*/).map(s => s.trim()).filter(Boolean).filter(p => {
+      const m = p.match(/실패(?:한)?\s*단계\s*[:：]?\s*(\d+)/);
+      if (!m) return true;
+      fail = +m[1];
+      return !/^[(（][\s\S]*[)）]$/.test(p);
+    });
+    if (parts.length < 2) return `<div style="font-size:15px;line-height:1.8;">${inl(v, P)}</div>`;
+    return `<table style="width:100%;${T0}">` + parts.map((s, i) => {
+      const bad = fail === i + 1;
+      return `<tr><td style="width:30px;${TD}padding:3px 0;vertical-align:top;">`
+        + `<div style="width:22px;height:22px;border-radius:50%;background:${bad ? P.warn : P.accent};color:${P.paper};font-family:${SN()};font-size:12px;line-height:22px;text-align:center;">${i + 1}</div></td>`
+        + `<td style="${TD}padding:2px 0 6px;vertical-align:top;font-size:15px;line-height:1.6;">`
+        + (bad ? `<span style="text-decoration:line-through;color:${P.warn};">${inl(s, P)}</span> <span style="font-family:${SN()};font-size:12px;color:${P.warn};">← 여기서 실패</span>` : inl(s, P))
+        + `</td></tr>`;
+    }).join('') + `</table>`;
+  }
+  function reviewsH(v, P){
+    const rows = String(v).split(/\s+\/\s+/).map(p => p.trim()).filter(Boolean).map(p => {
+      const m = p.match(/^([^—–:\-]{1,10}?)\s*(?:—|–|-{1,2}|:)\s*([\s\S]+)$/);
+      return m ? [m[1].trim(), m[2].trim()] : ['', p];
+    });
+    return `<table style="width:100%;${T0}">` + rows.map(([who, say]) =>
+      `<tr><td style="width:${who ? 46 : 0}px;${TD}padding:3px 8px 3px 0;vertical-align:top;font-family:${SN()};font-size:12px;line-height:1.9;color:${P.accent};white-space:nowrap;">${esc(who)}</td>`
+      + `<td style="${TD}padding:3px 0;vertical-align:top;font-family:${HD()};font-size:21px;line-height:1.35;color:${P.ink};">${inl(say, P)}</td></tr>`).join('') + `</table>`;
+  }
+  function kitchenCard(b, P, no, total){
+    const T = b.tags, r = T.result ? resultOf(T.result, P) : null;
+    const dk = DAY_KO[b.day];
+    const lab = (s) => `<div style="font-family:${FONTS.mono};font-size:11px;letter-spacing:.18em;color:${P.accent};margin:0 0 6px;">${s}</div>`;
+    let h = `<div style="margin:0 0 22px;padding:18px 18px 12px;background:${P.paper};border:1px solid ${P.line};border-radius:6px;box-shadow:0 2px 0 ${P.line};">`;
+    h += `<table style="width:100%;${T0}"><tr>`;
+    if (dk) h += `<td style="width:54px;${TD}vertical-align:top;"><div style="width:44px;height:44px;border-radius:50%;background:${P.tint};border:1.5px solid ${P.accent};text-align:center;line-height:42px;font-family:${SR()};font-weight:700;font-size:20px;color:${P.accent};">${dk[0]}</div></td>`;
+    h += `<td style="${TD}vertical-align:top;">`
+      + `<div style="font-family:${SN()};font-size:12px;color:${P.muted};line-height:1.5;">${esc([dk ? dk[1] : '', T.duty ? '주방 당번 ' + T.duty + (/서윤/.test(T.duty) ? ' 🐾' : '') : ''].filter(Boolean).join(' · ') || '오늘의 요리')}</div>`
+      + `<div style="font-family:${SR()};font-weight:700;font-size:20px;line-height:1.4;margin-top:2px;">${inl(T.menu || '이름 없는 요리', P)}</div></td>`;
+    if (r) h += `<td style="width:1%;${TD}padding-left:8px;vertical-align:top;text-align:right;"><div style="display:inline-block;padding:3px 9px;border:2px solid ${r.c};border-radius:4px;color:${r.c};font-family:${SR()};font-weight:700;font-size:14px;line-height:1.4;white-space:nowrap;transform:rotate(-6deg);">${esc(T.result)}</div></td>`;
+    h += `</tr></table>`;
+    h += `<div style="height:2px;background:${P.accent};opacity:.55;margin:14px 0 14px;"></div>`;
+    if (T.story) h += `<div style="font-size:15px;line-height:1.85;margin:0 0 16px;">${inl(T.story, P)}</div>`;
+    if (T.recipe) h += `<div style="margin:0 0 16px;">${lab('RECIPE · 만드는 법')}${stepsH(T.recipe, P)}</div>`;
+    if (T.review) h += `<div style="margin:0 0 14px;padding:10px 12px 8px;background:${P.tint};border-radius:6px;">${lab('한 줄 평')}${reviewsH(T.review, P)}</div>`;
+    b.extra.forEach(g => h += stat({ label:g.raw, value:g.v }, P));
+    b.notes.forEach(n => h += `<p style="margin:0 0 .8em;font-size:14px;color:${P.muted};">${inl(n.replace(/^\*([\s\S]*)\*$/, '$1'), P)}</p>`);
+    if (total > 1) h += `<div style="text-align:center;font-family:${SN()};font-size:11px;color:${P.muted};margin-top:6px;">— ${no} —</div>`;
+    return h + `</div>`;
+  }
+  function buildRecipe(data, o){
+    const { P, parsed, when, title, bgm, body, multi } = prep(data, o);
+    let h = shell(o, P, body, `padding:28px 22px 24px;border:1px solid ${P.line};border-top:6px double ${P.accent};border-radius:4px;`);
+    h += `<table style="width:100%;${T0}"><tr><td style="${TD}vertical-align:top;">`
+      + `<div style="font-family:${FONTS.mono};font-size:11px;letter-spacing:.22em;color:${P.accent};">${esc(!data.ship || /발키리/.test(data.ship) ? 'VALKYRIE' : data.ship)} MESS HALL · RECIPE BOOK</div>`
+      + (data.eyebrow ? `<div style="font-family:${SN()};font-size:12px;color:${P.muted};margin-top:2px;">${esc(data.eyebrow)}</div>` : '')
+      + (title ? `<div style="font-family:${SR()};font-weight:700;font-size:24px;line-height:1.45;margin:10px 0 0;">${esc(title)}</div>` : '')
+      + (when ? `<div style="font-family:${SN()};font-size:13px;color:${P.muted};margin-top:2px;">${esc(when)}</div>` : '')
+      + `</td><td style="width:62px;${TD}padding-left:10px;vertical-align:top;text-align:right;">`
+      + `<div style="display:inline-block;width:52px;height:52px;border:2px solid ${P.accent};border-radius:50%;color:${P.accent};font-family:${SR()};font-weight:700;font-size:22px;line-height:48px;text-align:center;box-sizing:border-box;">廚</div></td></tr></table>`;
+    h += `<div style="height:1px;background:${P.line};margin:18px 0 20px;"></div>` + coverH(data, P, o.style);
+    parsed.forEach((x, ti) => {
+      const k = kitchenParse(x.t.reply);
+      if (multi) h += `<div style="text-align:center;margin:${ti ? 34 : 0}px 0 16px;font-family:${SR()};font-size:15px;color:${P.accent};">— ${ti + 1}번째 주 —</div>`;
+      h += userBlock(x.t, o, P, 'recipe');
+      if (!k.days.length){ h += prose(x.body, P, SAY.recipe(P)) + turnImgsH(x.t, P, o.style) + altsH(x.t, P, o); return; }
+      const week = k.days.filter(b => b.day);
+      if (week.length > 1){
+        h += `<table style="width:100%;border-collapse:collapse;margin:0 0 6px;table-layout:fixed;"><tr>` + week.map(b => {
+          const r = b.tags.result ? resultOf(b.tags.result, P) : { c:P.line, i:'·' };
+          return `<td style="padding:8px 0 6px;border:1px solid ${P.line};background:${P.tint};text-align:center;vertical-align:top;">`
+            + `<div style="font-family:${SR()};font-weight:700;font-size:15px;line-height:1.3;color:${P.ink};">${DAY_KO[b.day][0]}</div>`
+            + `<div style="font-size:15px;line-height:1.4;color:${r.c};">${r.i}</div></td>`;
+        }).join('') + `</tr></table>`
+          + `<div style="font-family:${SN()};font-size:11px;color:${P.muted};text-align:right;margin:0 0 20px;"><span style="color:${P.accent};">★</span> 대성공 · ○ 무난 · <span style="color:${P.warn};">✕</span> 참사 · 🐾 서윤 특제</div>`;
+      }
+      k.intro.forEach(t => h += `<p style="margin:0 0 1em;font-size:15px;color:${P.muted};">${inl(t.replace(/^\*([\s\S]*)\*$/, '$1'), P)}</p>`);
+      k.days.forEach((b, i) => h += kitchenCard(b, P, i + 1, k.days.length));
+      h += turnImgsH(x.t, P, o.style);
+      if (k.outro.length){
+        h += `<div style="margin:6px 0 0;padding:18px 18px 8px;border:1px dashed ${P.accent};border-radius:6px;text-align:center;">`
+          + `<div style="font-family:${FONTS.mono};font-size:11px;letter-spacing:.18em;color:${P.accent};margin:0 0 8px;">LAST PAGE</div>`
+          + k.outro.map(t => `<p style="margin:0 0 .8em;font-family:${HD()};font-size:22px;line-height:1.45;">${inl(t.replace(/^\*([\s\S]*)\*$/, '$1'), P)}</p>`).join('') + `</div>`;
+      }
+      if (k.foot.length){
+        h += `<div style="margin:14px 0 0;font-family:${SN()};font-size:12px;line-height:1.7;color:${P.muted};">`
+          + k.foot.map(g => `<div>${g.raw ? `<span style="color:${P.accent};">${esc(g.raw)}</span> ` : ''}${esc(g.v)}</div>`).join('') + `</div>`;
+      }
+      h += altsH(x.t, P, o);
+    });
+    if (o.bgm && ytId(data.yt)) h += ytCard(data, bgm, P, o.style);
+    else if (o.bgm && bgm) h += `<div style="margin-top:24px;font-family:${SN()};font-size:13px;color:${P.muted};"><span style="color:${P.accent};">주방 라디오</span>&nbsp; ${esc(bgm)}</div>`;
+    h += galleryH(data, P, o.style) + tagsH(data, P);
+    h += `<div style="margin-top:28px;padding-top:12px;border-top:1px solid ${P.line};text-align:center;font-family:${SN()};font-size:12px;color:${P.muted};">${esc((data.ship || '발키리') + ' 함내 식당 주방 일지')}${data.dest ? ' · ' + esc(data.dest) : ''}</div>`;
+    return h + `</div>`;
+  }
+
+  /* ===== 무물 스토리 (무엇이든 물어보세요) =====
+     맨 위 [무물: 부부 | 재훈 | 희영] 으로 버전을 고르고, [스토리 n] 마다 한 장:
+     [배경: 사진 설명] [질문자: 익명 또는 이름] [질문: …] [답변: … (서재훈)] — 답변은 여러 줄이어도 된다.
+     턴에 그림을 넣으면 순서대로 각 장의 배경이 된다(배경 설명 대신). */
+  const QNA_VER = {
+    부부:{ name:'부부 ver', tag:'MUSTANG & CRUNA', base:'#16243d', bg:'linear-gradient(165deg,#16243d 0%,#2b2742 100%)', ink:'#f4efe0', sub:'#b9c4d4', ring:'#9db6dd', ring2:'#f2b8c6', card:'#fbf8f2', cardInk:'#26303c', jh:'#9db6dd', hy:'#f2b8c6', font:'serif', size:17 },
+    재훈:{ name:'재훈 ver', tag:'서재훈 · MUSTANG', base:'#0b1626', bg:'linear-gradient(170deg,#0b1626 0%,#13243a 100%)', ink:'#e8e2cf', sub:'#9fb0c2', ring:'#e4b45a', ring2:'#e4b45a', card:'#13243a', cardInk:'#e8e2cf', jh:'#e4b45a', hy:'#f2b8c6', font:'sans', size:16 },
+    희영:{ name:'희영 ver', tag:'서희영 · CRUNA', base:'#fff3f5', bg:'linear-gradient(165deg,#fff5f7 0%,#fbe1e9 100%)', ink:'#4a2c35', sub:'#a07884', ring:'#f2b8c6', ring2:'#e27a95', card:'#ffffff', cardInk:'#4a2c35', jh:'#4f6f9f', hy:'#d0607f', font:'hand', size:23 }
+  };
+  const QNA_WHO = /\s*[(（]\s*((?:서|김)?(?:재훈|희영)|머스탱|크루나|MUSTANG|CRUNA)\s*[)）]\s*$/i;
+  const whoKey = s => /희영|크루나|cruna/i.test(s) ? 'hy' : /재훈|머스탱|mustang/i.test(s) ? 'jh' : '';
+  function qnaParse(reply){
+    const out = { ver:'', intro:[], cards:[], outro:[], foot:[] };
+    let cur = null;
+    const open = no => { cur = { no, bg:'', asker:'', q:'', a:[], notes:[] }; out.cards.push(cur); };
+    String(reply || '').replace(/\r/g, '').split('\n').forEach(line => {
+      const t = line.trim();
+      if (!t || /^-{3,}$/.test(t)) return;
+      const g = tagLine(t);
+      if (g){
+        if (/^무물/.test(g.k)){ const v = g.v.replace(/\s*ver\.?$/i, '').trim(); out.ver = /재훈|머스탱/.test(v) ? '재훈' : /희영|크루나/.test(v) ? '희영' : '부부'; return; }
+        const sm = g.k.match(/^스토리(\d*)$/);
+        if (sm){ open(sm[1] || String(out.cards.length + 1)); if (g.v) cur.q = g.v; return; }
+        if (FOOT_TAG.test(g.k)){ out.foot.push(g); return; }
+        if (/^(배경|사진|그림)/.test(g.k)){ if (!cur || cur.q) open(String(out.cards.length + 1)); cur.bg = g.v; return; }
+        if (/^질문자|^보낸이|^닉네임/.test(g.k)){ if (!cur || cur.q) open(String(out.cards.length + 1)); cur.asker = g.v; return; }
+        if (/^질문/.test(g.k)){ if (!cur || cur.q) open(String(out.cards.length + 1)); cur.q = g.v; return; }
+        const am = g.raw.match(/^답변?\s*[(（]?\s*([^)）]*)[)）]?$/) || g.raw.match(/^((?:서|김)?(?:재훈|희영))(?:의)?\s*답(?:변)?$/);
+        if (am || /^답/.test(g.k)){
+          if (!cur) open('1');
+          let v = g.v, who = whoKey((am && am[1]) || '');
+          const wm = v.match(QNA_WHO); if (wm){ who = whoKey(wm[1]); v = v.slice(0, wm.index).trim(); }
+          const pm = !who && v.match(/^((?:서|김)?(?:재훈|희영))\s*(?:—|–|:|-)\s*([\s\S]+)$/); if (pm){ who = whoKey(pm[1]); v = pm[2].trim(); }
+          cur.a.push({ who, v });
+          return;
+        }
+        if (cur) cur.notes.push(g.raw + (g.v ? ': ' + g.v : '')); else out.intro.push(g.raw + (g.v ? ': ' + g.v : ''));
+        return;
+      }
+      if (out.foot.length) out.foot.push({ k:'', raw:'', v:t });
+      else if (!cur) out.intro.push(t);
+      else if (cur.a.length) cur.notes.push(t);
+      else cur.notes.push(t);
+    });
+    return out;
+  }
+  function qnaCard(c, V, vk, idx, total, img){
+    const F = V.font === 'hand' ? HD() : V.font === 'sans' ? SN() : SR();
+    const anon = !c.asker || /^(익명|비밀|anonymous)$/i.test(c.asker);
+    const dot = (ch, col) => `<span style="display:inline-block;width:24px;height:24px;margin-right:-6px;border-radius:50%;border:2px solid ${col};background:${V.base};color:${col};font-family:${SN()};font-size:11px;line-height:20px;text-align:center;box-sizing:border-box;vertical-align:middle;">${ch}</span>`;
+    const faces = vk === '재훈' ? dot('재', V.ring) : vk === '희영' ? dot('희', V.ring2) : dot('재', V.jh) + dot('희', V.hy);
+    let h = `<div style="max-width:340px;margin:0 auto 24px;border-radius:18px;overflow:hidden;background:${V.base};background-image:${V.bg};border:2px solid ${V.ring};${vk === '부부' ? `box-shadow:0 0 0 3px ${V.ring2}55;` : ''}color:${V.ink};text-align:left;">`;
+    h += `<table style="width:100%;${T0}"><tr><td style="${TD}padding:12px 14px 10px;vertical-align:middle;white-space:nowrap;">${faces}<span style="display:inline-block;margin-left:14px;vertical-align:middle;font-family:${SN()};font-size:12px;color:${V.ink};">${esc(V.tag)}</span></td>`
+      + `<td style="${TD}padding:12px 14px 10px;vertical-align:middle;text-align:right;font-family:${FONTS.mono};font-size:11px;color:${V.sub};white-space:nowrap;">무물 ${idx}/${total}</td></tr></table>`;
+    if (img) h += `<div style="padding:0 10px;">${imgTag(img, 12)}</div>`;
+    else h += `<div style="margin:0 10px;height:150px;border-radius:12px;background:${V.ring}22;border:1px dashed ${V.ring}88;box-sizing:border-box;padding:0 18px;display:table;width:calc(100% - 20px);"><div style="display:table-cell;vertical-align:middle;text-align:center;font-family:${SN()};font-size:12px;line-height:1.6;color:${V.sub};">${c.bg ? '📷 ' + esc(c.bg) : '　'}</div></div>`;
+    h += `<div style="position:relative;margin:-26px 18px 0;padding:11px 14px 12px;background:${V.card};color:${V.cardInk};border-radius:14px;border:1px solid ${V.ring}66;box-shadow:0 4px 12px #0003;">`
+      + `<div style="font-family:${SN()};font-size:11px;color:${vk === '희영' ? V.ring2 : vk === '재훈' ? V.ring : '#c2768d'};margin:0 0 3px;">${anon ? '무엇이든 송신하세요' : esc(c.asker) + '님의 질문'}</div>`
+      + `<div style="font-family:${SR()};font-weight:700;font-size:16px;line-height:1.5;">${esc(c.q || '…')}</div></div>`;
+    h += `<div style="padding:16px 20px 20px;">`;
+    c.a.forEach((a, i) => {
+      const who = a.who || (vk === '재훈' ? 'jh' : vk === '희영' ? 'hy' : (i % 2 ? 'hy' : 'jh'));
+      const col = who === 'hy' ? V.hy : V.jh;
+      h += `<div style="margin:${i ? 14 : 0}px 0 0;${vk === '부부' ? `padding-left:10px;border-left:2px solid ${col};` : ''}">`
+        + (vk === '부부' || a.who && a.who !== (vk === '재훈' ? 'jh' : 'hy') ? `<div style="font-family:${SN()};font-size:11px;color:${col};margin:0 0 2px;">${who === 'hy' ? '서희영' : '서재훈'}</div>` : '')
+        + `<div style="font-family:${F};font-size:${V.size}px;line-height:1.5;color:${V.ink};">${esc(a.v)}</div></div>`;
+    });
+    c.notes.forEach(n => h += `<div style="margin-top:10px;font-family:${SN()};font-size:12px;line-height:1.6;color:${V.sub};">${esc(n.replace(/^\*([\s\S]*)\*$/, '$1'))}</div>`);
+    return h + `</div></div>`;
+  }
+  function buildQna(data, o){
+    const { P, parsed, when, title, bgm, body, multi } = prep(data, o);
+    let h = shell(o, P, body, `padding:26px 18px 22px;border:1px solid ${P.line};border-radius:10px;`);
+    const all = parsed.map(x => ({ x, q:qnaParse(x.t.reply) }));
+    const vk = (all.find(a => a.q.ver) || { q:{ ver:'부부' } }).q.ver;
+    const V = QNA_VER[vk];
+    const count = all.reduce((n, a) => n + a.q.cards.length, 0);
+    h += `<div style="text-align:center;">`
+      + `<div style="font-family:${FONTS.mono};font-size:11px;letter-spacing:.2em;color:${P.accent};">ASK ME ANYTHING · ${esc(V.name.toUpperCase())}</div>`
+      + `<div style="font-family:${SR()};font-weight:700;font-size:23px;line-height:1.45;margin:8px 0 0;">${esc(title || '무엇이든 물어보세요')}</div>`
+      + `<div style="font-family:${SN()};font-size:12px;color:${P.muted};margin-top:4px;">${esc([data.eyebrow, when, count ? '질문 ' + count + '장' : ''].filter(Boolean).join(' · '))}</div></div>`;
+    h += `<div style="height:1px;background:${P.line};margin:18px 0 22px;"></div>` + coverH(data, P, o.style);
+    let idx = 0;
+    all.forEach(({ x, q }, ti) => {
+      if (multi && ti) h += `<div style="text-align:center;color:${P.accent};margin:8px 0 22px;letter-spacing:.5em;padding-left:.5em;">· · ·</div>`;
+      h += userBlock(x.t, o, P, 'qna');
+      if (!q.cards.length){ h += prose(x.body, P, SAY.qna(P)) + turnImgsH(x.t, P, o.style) + altsH(x.t, P, o); return; }
+      const imgs = toImgs(x.t.images);
+      q.intro.forEach(t => h += `<p style="margin:0 0 1em;font-size:14px;color:${P.muted};text-align:center;">${inl(t.replace(/^\*([\s\S]*)\*$/, '$1'), P)}</p>`);
+      q.cards.forEach((c, i) => { idx++; h += qnaCard(c, V, vk, idx, count, imgs[i]); });
+      imgs.slice(q.cards.length).forEach(img => h += imgH(img, P, o.style));
+      if (q.foot.length) h += `<div style="margin:4px 0 0;text-align:center;font-family:${SN()};font-size:12px;line-height:1.7;color:${P.muted};">` + q.foot.map(g => `<div>${g.raw ? `<span style="color:${P.accent};">${esc(g.raw)}</span> ` : ''}${esc(g.v)}</div>`).join('') + `</div>`;
+      h += altsH(x.t, P, o);
+    });
+    if (o.bgm && ytId(data.yt)) h += ytCard(data, bgm, P, o.style);
+    else if (o.bgm && bgm) h += `<div style="margin-top:22px;text-align:center;font-family:${SN()};font-size:13px;color:${P.muted};"><span style="color:${P.accent};">수신 중인 곡</span>&nbsp; ${esc(bgm)}</div>`;
+    h += galleryH(data, P, o.style) + tagsH(data, P, true);
+    h += `<div style="margin-top:24px;text-align:center;font-family:${SN()};font-size:12px;color:${P.muted};">무엇이든 송신하세요. 답장은 ${vk === '재훈' ? '짧게' : vk === '희영' ? '하트 담아' : '둘이 번갈아'} 갑니다.</div>`;
+    return h + `</div>`;
+  }
+
+  const BUILDERS = { recipe:buildRecipe, qna:buildQna, library:buildLibrary, peach:buildPeach, letter:buildLetter, log:buildLog, score:buildScore, vow:buildVow, wuxia:buildWuxia, game:buildGame, stream:buildStream, request:buildRequest };
   function build(data, o){ return (BUILDERS[o.style] || buildLetter)(data, o); }
     return { build, PALETTES, toImgs, ytId };
   })();
 
   /* ---------- 읽기 서식 고르기 ---------- */
-  const READ_STYLES = [['classic','기본'],['letter','편지'],['log','항해일지'],['score','악보'],['vow','서약서'],['wuxia','무협'],['game','동양풍 게임'],['stream','방송'],['request','의뢰서'],['peach','도원'],['library','만상의 서']];
-  const DEFAULT_PAL = { letter:'blossom', log:'night', score:'blossom', vow:'ink', wuxia:'hanji', game:'jade', stream:'onair', request:'manila', peach:'peach', library:'library' };
+  const READ_STYLES = [['classic','기본'],['letter','편지'],['log','항해일지'],['score','악보'],['vow','서약서'],['wuxia','무협'],['game','동양풍 게임'],['stream','방송'],['request','의뢰서'],['peach','도원'],['library','만상의 서'],['recipe','레시피북'],['qna','무물 스토리']];
+  const DEFAULT_PAL = { letter:'blossom', log:'night', score:'blossom', vow:'ink', wuxia:'hanji', game:'jade', stream:'onair', request:'manila', peach:'peach', library:'library', recipe:'kitchen', qna:'canopy' };
   // 서식 고르는 순서: 이번에 방문자가 직접 고른 것 > 항로 설정의 기본 서식 > 지난번에 고른 것 > LOG.readStyle
   let readStyle = LOG.readStyle || 'classic';
   let savedStyle = null, sessionStyle = null;
