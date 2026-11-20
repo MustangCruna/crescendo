@@ -250,6 +250,7 @@
     { id:'library', name:'만상 서고', paper:'#f3ede1', ink:'#2a2320', muted:'#7f7262', line:'#dccfb8', accent:'#6b2f3a', tint:'#ebe3d3', tint2:'#efe8dc', bar:'#d9ccb4', warn:'#a3332b' },
     { id:'kitchen', name:'발키리 주방', paper:'#fbf5ea', ink:'#2e2620', muted:'#85725f', line:'#e6d6bd', accent:'#c8794a', tint:'#f4e8d4', tint2:'#efe9df', bar:'#e8d7bc', warn:'#b8323f' },
     { id:'canopy',  name:'2km 상공', paper:'#0b1626', ink:'#e8e2cf', muted:'#9fb0c2', line:'#22364d', accent:'#e4b45a', tint:'#13243a', tint2:'#1a2a40', bar:'#22364d', warn:'#f2b8c6' },
+    { id:'ledger',  name:'살림 장부', paper:'#f7f1e3', ink:'#2b2a26', muted:'#7d735f', line:'#e0d5bd', accent:'#b5862e', tint:'#efe6d0', tint2:'#f2ece0', bar:'#e3d6b8', warn:'#c0392b' },
     { id:'ink',     name:'먹과 인주', paper:'#f8f7f4', ink:'#222020', muted:'#7a7570', line:'#dedad2', accent:'#b03a2e', tint:'#eeece6', tint2:'#f4ece5', bar:'#dcd8cf', warn:'#b03a2e' }
   ];
   const FONTS = {
@@ -387,6 +388,7 @@
     library:(P) => s => `<p style="margin:0 0 1em;padding-left:1.4em;text-indent:-1.4em;"><span style="display:inline-block;width:1.4em;text-indent:0;color:${P.accent};">—</span>${s}</p>`,
     recipe:(P) => s => `<p style="margin:0 0 1em;">${s}</p>`,
     qna:(P) => s => `<p style="margin:0 0 1em;">${s}</p>`,
+    ledger:(P) => s => `<p style="margin:0 0 1em;">${s}</p>`,
     peach:(P) => s => `<p style="margin:0 0 1em;"><span style="display:inline-block;max-width:100%;padding:4px 14px;background:${P.tint};border:1px solid ${P.line};border-radius:18px;">${s}</span></p>`,
     game:(P) => s => `<div style="margin:0 0 1em;padding:9px 30px 9px 14px;background:${P.tint};border:1px solid ${P.line};border-left:3px solid ${P.accent};border-radius:4px;position:relative;">${s}<span style="position:absolute;right:10px;bottom:6px;font-size:10px;color:${P.accent};">▼</span></div>`
   };
@@ -467,8 +469,8 @@
     if (!m && /^[\w-]{11}$/.test(s)) m = [s, s];
     return m ? m[1] : '';
   }
-  const IMG_LABEL = { letter:'함께 넣은 사진', log:'첨부 사진', score:'삽화', vow:'기념 사진', wuxia:'화첩(畵帖)', game:'획득한 일러스트', stream:'방송 캡처', request:'첨부 자료', peach:'도원 화첩', library:'수록 삽화', recipe:'식탁 사진', qna:'수신 사진' };
-  const YT_LABEL = { letter:'지금 흐르는 곡', log:'♪ 함내 방송', score:'오늘의 연주곡', vow:'함께 들은 곡', wuxia:'風流, 오늘의 곡', game:'BGM ▶', stream:'방송 BGM', request:'참고 음원', peach:'도원에 흐르는 곡', library:'서고에 흐르는 곡', recipe:'주방 라디오', qna:'수신 중인 곡' };
+  const IMG_LABEL = { letter:'함께 넣은 사진', log:'첨부 사진', score:'삽화', vow:'기념 사진', wuxia:'화첩(畵帖)', game:'획득한 일러스트', stream:'방송 캡처', request:'첨부 자료', peach:'도원 화첩', library:'수록 삽화', recipe:'식탁 사진', qna:'수신 사진', ledger:'붙여 둔 사진' };
+  const YT_LABEL = { letter:'지금 흐르는 곡', log:'♪ 함내 방송', score:'오늘의 연주곡', vow:'함께 들은 곡', wuxia:'風流, 오늘의 곡', game:'BGM ▶', stream:'방송 BGM', request:'참고 음원', peach:'도원에 흐르는 곡', library:'서고에 흐르는 곡', recipe:'주방 라디오', qna:'수신 중인 곡', ledger:'살림방 라디오' };
   function capH(cap, P, kind){
     if (!cap) return '';
     const font = kind === 'letter' ? `font-family:${HD()};font-size:19px;` : kind === 'score' || kind === 'vow' ? `font-family:${SR()};font-style:italic;font-size:13px;` : `font-family:${SN()};font-size:12px;`;
@@ -1293,7 +1295,137 @@
     return h + `</div>`;
   }
 
-  const BUILDERS = { recipe:buildRecipe, qna:buildQna, library:buildLibrary, peach:buildPeach, letter:buildLetter, log:buildLog, score:buildScore, vow:buildVow, wuxia:buildWuxia, game:buildGame, stream:buildStream, request:buildRequest };
+  /* ===== 가계부 (서씨네 살림 장부) =====
+     [가계부: 2026-11] 한 줄로 달을 정하고, 아래 꼬리표를 읽는다.
+     [항목: 11/03 | 식비 | 소고기 미역국 재료 | 32,000 | 재훈 | 메모(선택)]
+     [영수증: 가게 | 날짜 | 품목 금액, 품목 금액… | 합계(비우면 자동) | 메모]
+     [이번 달 에피소드: …] [한 줄 평: 희영 — … / 재훈 — …] [결산: 한 줄]
+     합계 · 분류별 막대 · 누가 얼마 썼는지는 사이트가 직접 계산한다. 금액은 원. */
+  const LEDGER_CAT = [[/식비|식당|장보기|밥|외식/, '#c8794a'], [/서윤|츄르|고양이/, '#e58aa5'], [/함선|발키리|정비|연료/, '#6f93c4'], [/데이트|선물|기념/, '#c0546f'], [/방울|아기|육아|도훈/, '#8fbf9a']];
+  const catColor = (c, P) => (LEDGER_CAT.find(([re]) => re.test(c)) || [null, P.accent])[1];
+  function won(s){
+    const m = String(s || '').replace(/\s+/g, '').match(/(-?\d[\d,]*(?:\.\d+)?)(만)?/);
+    if (!m) return 0;
+    const n = parseFloat(m[1].replace(/,/g, '')) * (m[2] ? 10000 : 1);
+    return isFinite(n) ? Math.round(n) : 0;
+  }
+  const fmtWon = n => n.toLocaleString('ko-KR') + '원';
+  function ledgerParse(reply){
+    const out = { month:'', items:[], receipts:[], episode:[], review:'', close:[], notes:[], foot:[] };
+    String(reply || '').replace(/\r/g, '').split('\n').forEach(line => {
+      const t = line.trim();
+      if (!t || /^-{3,}$/.test(t)) return;
+      const g = tagLine(t);
+      if (!g){ (out.foot.length ? out.foot : out.notes).push(out.foot.length ? { k:'', raw:'', v:t } : t); return; }
+      const parts = g.v.split('|').map(s => s.trim());
+      if (/^가계부|^장부/.test(g.k)) out.month = g.v;
+      else if (/^항목|^지출/.test(g.k)) out.items.push({ date:parts[0] || '', cat:parts[1] || '기타', what:parts[2] || '', amt:won(parts[3]), raw:parts[3] || '', who:parts[4] || '', memo:parts.slice(5).join(' | ') });
+      else if (/^영수증/.test(g.k)){
+        const lines = String(parts[2] || '').split(/\s*[,，]\s*(?=\D)/).filter(Boolean).map(x => { const m = x.match(/^(.*?)\s*(-?\d[\d,]*(?:\.\d+)?\s*만?\s*원?)$/); return m ? { name:m[1].trim(), amt:won(m[2]) } : { name:x, amt:0 }; });
+        const sum = won(parts[3]) || lines.reduce((s, x) => s + x.amt, 0);
+        out.receipts.push({ shop:parts[0] || '가게', date:parts[1] || '', lines, sum, memo:parts.slice(4).join(' | ') });
+      }
+      else if (/에피소드|있었던일/.test(g.k)) out.episode.push(g.v);
+      else if (/한줄평|^평$/.test(g.k)) out.review = g.v;
+      else if (/^결산|^총평/.test(g.k)) out.close.push(g.v);
+      else if (FOOT_TAG.test(g.k)) out.foot.push(g);
+      else out.notes.push(g.raw + (g.v ? ': ' + g.v : ''));
+    });
+    return out;
+  }
+  function receiptH(r, P){
+    const MO = FONTS.mono, row = (a, b, bold) => `<tr><td style="${TD}padding:1px 0;font-family:${MO};font-size:12px;${bold ? 'font-weight:700;' : ''}color:#3a3630;">${esc(a)}</td><td style="${TD}padding:1px 0;text-align:right;font-family:${MO};font-size:12px;${bold ? 'font-weight:700;' : ''}color:#3a3630;white-space:nowrap;">${esc(b)}</td></tr>`;
+    return `<div style="max-width:250px;margin:0 auto 18px;padding:14px 16px 12px;background:#fbfaf5;border-top:2px dotted #c9c2b2;border-bottom:2px dotted #c9c2b2;box-shadow:0 2px 6px #0002;transform:rotate(-1deg);color:#3a3630;">`
+      + `<div style="text-align:center;font-family:${MO};font-size:14px;font-weight:700;letter-spacing:.06em;">${esc(r.shop)}</div>`
+      + (r.date ? `<div style="text-align:center;font-family:${MO};font-size:11px;color:#8a8273;margin-top:2px;">${esc(r.date)}</div>` : '')
+      + `<div style="border-top:1px dashed #b9b1a0;margin:8px 0 6px;"></div>`
+      + `<table style="width:100%;${T0}">` + r.lines.map(x => row(x.name, x.amt ? fmtWon(x.amt) : '')).join('') + `</table>`
+      + `<div style="border-top:1px dashed #b9b1a0;margin:6px 0 4px;"></div>`
+      + `<table style="width:100%;${T0}">${row('합계', fmtWon(r.sum), true)}</table>`
+      + (r.memo ? `<div style="margin-top:8px;font-family:${HD()};font-size:18px;line-height:1.3;color:#6b5b48;">${esc(r.memo)}</div>` : '')
+      + `<div style="margin-top:8px;text-align:center;font-family:${MO};font-size:10px;letter-spacing:.2em;color:#a39b8b;">THANK YOU · 감사합니다</div></div>`;
+  }
+  function buildLedger(data, o){
+    const { P, parsed, title, bgm, body, multi } = prep(data, o);
+    const when = data.when || '';   // 영수증 날짜가 기록 날짜로 잘못 잡히지 않게
+    const MO = FONTS.mono;
+    let h = shell(o, P, body, `padding:28px 22px 24px;border:1px solid ${P.line};border-left:8px solid ${P.accent};border-radius:4px;`);
+    const all = parsed.map(x => ({ x, L:ledgerParse(x.t.reply) }));
+    const month = (all.find(a => a.L.month) || { L:{ month:'' } }).L.month;
+    const mm = month.match(/(\d{4})\D+(\d{1,2})/);
+    const head = title && !/^\s*\[/.test(title) ? title : (mm ? `${mm[1]}년 ${+mm[2]}월 가계부` : '서씨네 가계부');
+    h += `<table style="width:100%;${T0}"><tr><td style="${TD}vertical-align:top;">`
+      + `<div style="font-family:${MO};font-size:11px;letter-spacing:.2em;color:${P.accent};">SEO FAMILY · HOUSEHOLD LEDGER</div>`
+      + (data.eyebrow ? `<div style="font-family:${SN()};font-size:12px;color:${P.muted};margin-top:2px;">${esc(data.eyebrow)}</div>` : '')
+      + `<div style="font-family:${SR()};font-weight:700;font-size:24px;line-height:1.45;margin:10px 0 0;">${esc(head)}</div>`
+      + (when ? `<div style="font-family:${SN()};font-size:13px;color:${P.muted};margin-top:2px;">${esc(when)}</div>` : '')
+      + `</td><td style="width:1%;${TD}padding-left:10px;vertical-align:top;text-align:right;">`
+      + `<div style="display:inline-block;padding:5px 9px;border:2px solid ${P.warn};border-radius:3px;color:${P.warn};font-family:${SR()};font-weight:700;font-size:13px;line-height:1.25;text-align:center;white-space:nowrap;transform:rotate(4deg);">S급<br>가계부</div></td></tr></table>`;
+    h += `<div style="height:1px;background:${P.line};margin:18px 0 20px;"></div>` + coverH(data, P, o.style);
+    all.forEach(({ x, L }, ti) => {
+      if (multi && ti) h += `<div style="text-align:center;color:${P.accent};margin:10px 0 22px;font-family:${MO};font-size:12px;letter-spacing:.3em;">— 다음 쪽 —</div>`;
+      h += userBlock(x.t, o, P, 'ledger');
+      if (!L.items.length && !L.receipts.length){ h += prose(x.body, P, SAY.ledger(P)) + turnImgsH(x.t, P, o.style) + altsH(x.t, P, o); return; }
+      const total = L.items.reduce((s, it) => s + it.amt, 0) + L.receipts.filter(r => !L.items.length).reduce((s, r) => s + r.sum, 0);
+      const by = {}, who = { jh:0, hy:0, etc:0 };
+      L.items.forEach(it => { by[it.cat] = (by[it.cat] || 0) + it.amt; const k = whoKey(it.who) || 'etc'; who[k] += it.amt; });
+      // 한 달 합계
+      h += `<table style="width:100%;${T0}margin:0 0 18px;background:${P.tint};border-radius:6px;"><tr>`
+        + `<td style="${TD}padding:14px 16px;vertical-align:middle;"><div style="font-family:${SN()};font-size:12px;color:${P.muted};">이번 달 지출</div>`
+        + `<div style="font-family:${SR()};font-weight:700;font-size:26px;line-height:1.3;color:${P.ink};">${fmtWon(total)}</div>`
+        + `<div style="font-family:${SN()};font-size:12px;color:${P.muted};">${L.items.length}건${L.receipts.length ? ' · 영수증 ' + L.receipts.length + '장' : ''}</div></td>`
+        + `<td style="width:1%;${TD}padding:14px 16px 14px 0;vertical-align:middle;text-align:right;white-space:nowrap;font-family:${SN()};font-size:12px;line-height:1.8;">`
+        + (who.jh ? `<div><span style="color:#4f6f9f;">재훈</span> ${fmtWon(who.jh)}</div>` : '')
+        + (who.hy ? `<div><span style="color:#d0607f;">희영</span> ${fmtWon(who.hy)}</div>` : '')
+        + (who.etc ? `<div><span style="color:${P.muted};">그 밖</span> ${fmtWon(who.etc)}</div>` : '')
+        + `</td></tr></table>`;
+      // 분류별 막대
+      const cats = Object.entries(by).sort((a, b) => b[1] - a[1]);
+      if (cats.length){
+        h += `<div style="margin:0 0 22px;">` + cats.map(([c, v]) => {
+          const pct = total ? Math.max(2, Math.round(v / total * 100)) : 0, col = catColor(c, P);
+          return `<div style="margin:0 0 8px;font-family:${SN()};"><table style="width:100%;${T0}"><tr><td style="${TD}font-size:13px;color:${P.ink};">${esc(c)}</td><td style="${TD}text-align:right;font-size:13px;color:${P.muted};">${fmtWon(v)} · ${pct}%</td></tr></table>`
+            + `<div style="height:6px;margin-top:3px;background:${P.bar};border-radius:3px;overflow:hidden;"><div style="height:6px;width:${pct}%;background:${col};"></div></div></div>`;
+        }).join('') + `</div>`;
+      }
+      // 장부 줄
+      if (L.items.length){
+        h += `<div style="font-family:${MO};font-size:11px;letter-spacing:.18em;color:${P.accent};margin:0 0 6px;">장부 · ENTRIES</div>`
+          + `<table style="width:100%;border-collapse:collapse;margin:0 0 22px;">` + L.items.map(it => {
+            const k = whoKey(it.who), hand = k === 'hy', col = catColor(it.cat, P);
+            const txt = hand ? `font-family:${HD()};font-size:20px;line-height:1.25;color:#b04a68;` : `font-family:${SR()};font-size:15px;line-height:1.5;color:${k === 'jh' ? '#2f4b74' : P.ink};`;
+            return `<tr><td style="width:46px;padding:7px 6px 7px 0;border:0;border-bottom:1px solid ${P.line};vertical-align:top;font-family:${MO};font-size:11px;line-height:1.9;color:${P.muted};white-space:nowrap;">${esc(it.date)}</td>`
+              + `<td style="padding:7px 6px 7px 0;border:0;border-bottom:1px solid ${P.line};vertical-align:top;">`
+              + `<span style="display:inline-block;margin-right:6px;padding:0 6px;border:1px solid ${col};border-radius:3px;font-family:${SN()};font-size:11px;line-height:1.6;color:${col};vertical-align:1px;">${esc(it.cat)}</span><span style="${txt}">${esc(it.what)}</span>`
+              + (it.memo ? `<div style="font-family:${SN()};font-size:12px;color:${P.muted};margin-top:2px;">${esc(it.memo)}</div>` : '') + `</td>`
+              + `<td style="width:1%;padding:7px 0;border:0;border-bottom:1px solid ${P.line};vertical-align:top;text-align:right;white-space:nowrap;">`
+              + `<div style="font-family:${MO};font-size:13px;line-height:1.7;color:${P.ink};">${it.amt ? fmtWon(it.amt) : esc(it.raw)}</div>`
+              + (it.who ? `<div style="font-family:${SN()};font-size:11px;color:${k === 'hy' ? '#d0607f' : k === 'jh' ? '#4f6f9f' : P.muted};">${esc(it.who)}${/서윤/.test(it.who) ? ' 🐾' : ''}</div>` : '') + `</td></tr>`;
+          }).join('') + `</table>`;
+      }
+      // 영수증
+      if (L.receipts.length) h += `<div style="font-family:${MO};font-size:11px;letter-spacing:.18em;color:${P.accent};margin:0 0 12px;">붙여 둔 영수증 · RECEIPTS</div>` + L.receipts.map(r => receiptH(r, P)).join('');
+      h += turnImgsH(x.t, P, o.style);
+      // 에피소드 · 한 줄 평 · 결산
+      L.episode.forEach(ep => h += `<div style="margin:6px 0 16px;padding:14px 16px 10px;border:1px dashed ${P.accent};border-radius:6px;"><div style="font-family:${MO};font-size:11px;letter-spacing:.18em;color:${P.accent};margin:0 0 6px;">이번 달 에피소드</div><div style="font-family:${HD()};font-size:22px;line-height:1.45;">${inl(ep, P)}</div></div>`);
+      L.notes.forEach(n => h += `<p style="margin:0 0 .8em;font-size:14px;color:${P.muted};">${inl(n.replace(/^\*([\s\S]*)\*$/, '$1'), P)}</p>`);
+      h += `<table style="width:100%;${T0}margin:10px 0 0;padding-top:14px;border-top:3px double ${P.line};"><tr><td style="${TD}padding-top:14px;vertical-align:top;">`
+        + `<div style="font-family:${MO};font-size:11px;letter-spacing:.18em;color:${P.accent};margin:0 0 6px;">결산 · ${esc(fmtWon(total))}</div>`
+        + L.close.map(c => `<div style="font-size:15px;line-height:1.7;margin:0 0 6px;">${inl(c, P)}</div>`).join('')
+        + (L.review ? reviewsH(L.review, P) : '')
+        + `</td><td style="width:1%;${TD}padding:14px 0 0 12px;vertical-align:top;">`
+        + `<div style="width:64px;height:64px;border:2.5px solid ${P.warn};border-radius:50%;color:${P.warn};font-family:${SR()};font-weight:700;font-size:14px;line-height:1.2;text-align:center;box-sizing:border-box;padding-top:15px;transform:rotate(-12deg);opacity:.9;">오늘도<br>흑자</div></td></tr></table>`;
+      if (L.foot.length) h += `<div style="margin:14px 0 0;font-family:${SN()};font-size:12px;line-height:1.7;color:${P.muted};">` + L.foot.map(g => `<div>${g.raw ? `<span style="color:${P.accent};">${esc(g.raw)}</span> ` : ''}${esc(g.v)}</div>`).join('') + `</div>`;
+      h += altsH(x.t, P, o);
+    });
+    if (o.bgm && ytId(data.yt)) h += ytCard(data, bgm || "Let's Call the Whole Thing Off — Ella Fitzgerald & Louis Armstrong", P, o.style);
+    else if (o.bgm && bgm) h += `<div style="margin-top:24px;font-family:${SN()};font-size:13px;color:${P.muted};"><span style="color:${P.accent};">살림방 라디오</span>&nbsp; ${esc(bgm)}</div>`;
+    h += galleryH(data, P, o.style) + tagsH(data, P);
+    h += `<div style="margin-top:26px;padding-top:12px;border-top:1px solid ${P.line};text-align:center;font-family:${SN()};font-size:12px;color:${P.muted};">서씨네 살림 장부 · 적자 불가</div>`;
+    return h + `</div>`;
+  }
+
+  const BUILDERS = { ledger:buildLedger, recipe:buildRecipe, qna:buildQna, library:buildLibrary, peach:buildPeach, letter:buildLetter, log:buildLog, score:buildScore, vow:buildVow, wuxia:buildWuxia, game:buildGame, stream:buildStream, request:buildRequest };
   function build(data, o){ return (BUILDERS[o.style] || buildLetter)(data, o); }
 
   const BLANK = {
@@ -1479,9 +1611,10 @@
     { id:'peach',  name:'도원', desc:'복숭아밭 일지, n번째 봄, 仙桃와 九尾 인장' },
     { id:'library', name:'만상의 서', desc:'열람 카드, 제n장, 책갈피 속마음, 萬象 인장' },
     { id:'recipe', name:'레시피북', desc:'요일별 레시피 카드, 결과 도장, 한 줄 평, 廚 인장' },
-    { id:'qna',    name:'무물 스토리', desc:'[무물: 부부·재훈·희영] 질문 카드, 한 장씩 답장' }
+    { id:'qna',    name:'무물 스토리', desc:'[무물: 부부·재훈·희영] 질문 카드, 한 장씩 답장' },
+    { id:'ledger', name:'가계부', desc:'한 달 장부, 분류별 막대, 감열지 영수증, 오늘도 흑자 도장' }
   ];
-  const STYLE_PAL = { wuxia:'hanji', game:'jade', stream:'onair', request:'manila', peach:'peach', library:'library', recipe:'kitchen', qna:'canopy' };   // 새 서식을 고르면 어울리는 편지지로 바꿔준다
+  const STYLE_PAL = { wuxia:'hanji', game:'jade', stream:'onair', request:'manila', peach:'peach', library:'library', recipe:'kitchen', qna:'canopy', ledger:'ledger' };   // 새 서식을 고르면 어울리는 편지지로 바꿔준다
   function renderStyles(){
     const box = $('styles'); box.replaceChildren();
     STYLES.forEach(st => {
