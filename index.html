@@ -960,6 +960,7 @@
     if (e.title) return e.title;
     if (e.psum) return e.psum;
     if (inf.summary) return inf.summary;
+    for (const t of e.turns){ const q = String(t.reply || '').match(/\[\s*무물\s*[:：]\s*([^\]]+?)\s*\]/); if (q) return '무엇이든 물어보세요 · ' + q[1].replace(/\s*ver\.?$/i, '') + ' ver'; }
     for (const t of e.turns){
       const first = P(t.reply).body.split('\n').map(s => s.trim()).find(s => s && !isStarLine(s));
       if (first) return first.length > 40 ? first.slice(0, 40) + '…' : first;
@@ -2252,7 +2253,7 @@
     request:(P) => s => `<p style="margin:0 0 1em;padding-left:1.3em;text-indent:-1.3em;"><span style="display:inline-block;width:1.3em;text-indent:0;color:${P.accent};">▸</span>${s}</p>`,
     library:(P) => s => `<p style="margin:0 0 1em;padding-left:1.4em;text-indent:-1.4em;"><span style="display:inline-block;width:1.4em;text-indent:0;color:${P.accent};">—</span>${s}</p>`,
     recipe:(P) => s => `<p style="margin:0 0 1em;">${s}</p>`,
-    qna:(P) => s => `<p style="margin:0 0 1em;text-align:center;">${s}</p>`,
+    qna:(P) => s => `<p style="margin:0 0 1em;">${s}</p>`,
     peach:(P) => s => `<p style="margin:0 0 1em;"><span style="display:inline-block;max-width:100%;padding:4px 14px;background:${P.tint};border:1px solid ${P.line};border-radius:18px;">${s}</span></p>`,
     game:(P) => s => `<div style="margin:0 0 1em;padding:9px 30px 9px 14px;background:${P.tint};border:1px solid ${P.line};border-left:3px solid ${P.accent};border-radius:4px;position:relative;">${s}<span style="position:absolute;right:10px;bottom:6px;font-size:10px;color:${P.accent};">▼</span></div>`
   };
@@ -3023,9 +3024,9 @@
      [배경: 사진 설명] [질문자: 익명 또는 이름] [질문: …] [답변: … (서재훈)] — 답변은 여러 줄이어도 된다.
      턴에 그림을 넣으면 순서대로 각 장의 배경이 된다(배경 설명 대신). */
   const QNA_VER = {
-    부부:{ name:'부부 ver', tag:'MUSTANG & CRUNA', base:'#16243d', bg:'linear-gradient(165deg,#16243d 0%,#2b2742 100%)', ink:'#f4efe0', sub:'#b9c4d4', ring:'#9db6dd', ring2:'#f2b8c6', card:'#fbf8f2', cardInk:'#26303c', jh:'#9db6dd', hy:'#f2b8c6', font:'serif', size:17 },
-    재훈:{ name:'재훈 ver', tag:'서재훈 · MUSTANG', base:'#0b1626', bg:'linear-gradient(170deg,#0b1626 0%,#13243a 100%)', ink:'#e8e2cf', sub:'#9fb0c2', ring:'#e4b45a', ring2:'#e4b45a', card:'#13243a', cardInk:'#e8e2cf', jh:'#e4b45a', hy:'#f2b8c6', font:'sans', size:16 },
-    희영:{ name:'희영 ver', tag:'서희영 · CRUNA', base:'#fff3f5', bg:'linear-gradient(165deg,#fff5f7 0%,#fbe1e9 100%)', ink:'#4a2c35', sub:'#a07884', ring:'#f2b8c6', ring2:'#e27a95', card:'#ffffff', cardInk:'#4a2c35', jh:'#4f6f9f', hy:'#d0607f', font:'hand', size:23 }
+    부부:{ name:'부부 ver', tag:'MUSTANG & CRUNA', song:'Fly Me to the Moon — Frank Sinatra', base:'#16243d', bg:'linear-gradient(165deg,#16243d 0%,#2b2742 100%)', ink:'#f4efe0', sub:'#b9c4d4', ring:'#9db6dd', ring2:'#f2b8c6', card:'#fbf8f2', cardInk:'#26303c', jh:'#9db6dd', hy:'#f2b8c6', font:'serif', size:17 },
+    재훈:{ name:'재훈 ver', tag:'서재훈 · MUSTANG', song:'Can\'t Take My Eyes Off You — Frankie Valli', base:'#0b1626', bg:'linear-gradient(170deg,#0b1626 0%,#13243a 100%)', ink:'#e8e2cf', sub:'#9fb0c2', ring:'#e4b45a', ring2:'#e4b45a', card:'#13243a', cardInk:'#e8e2cf', jh:'#e4b45a', hy:'#f2b8c6', font:'sans', size:16 },
+    희영:{ name:'희영 ver', tag:'서희영 · CRUNA', song:'Dream a Little Dream of Me — Ella Fitzgerald & Louis Armstrong', base:'#fff3f5', bg:'linear-gradient(165deg,#fff5f7 0%,#fbe1e9 100%)', ink:'#4a2c35', sub:'#a07884', ring:'#f2b8c6', ring2:'#e27a95', card:'#ffffff', cardInk:'#4a2c35', jh:'#4f6f9f', hy:'#d0607f', font:'hand', size:23 }
   };
   const QNA_WHO = /\s*[(（]\s*((?:서|김)?(?:재훈|희영)|머스탱|크루나|MUSTANG|CRUNA)\s*[)）]\s*$/i;
   const whoKey = s => /희영|크루나|cruna/i.test(s) ? 'hy' : /재훈|머스탱|mustang/i.test(s) ? 'jh' : '';
@@ -3097,7 +3098,7 @@
     const count = all.reduce((n, a) => n + a.q.cards.length, 0);
     h += `<div style="text-align:center;">`
       + `<div style="font-family:${FONTS.mono};font-size:11px;letter-spacing:.2em;color:${P.accent};">ASK ME ANYTHING · ${esc(V.name.toUpperCase())}</div>`
-      + `<div style="font-family:${SR()};font-weight:700;font-size:23px;line-height:1.45;margin:8px 0 0;">${esc(title || '무엇이든 물어보세요')}</div>`
+      + `<div style="font-family:${SR()};font-weight:700;font-size:23px;line-height:1.45;margin:8px 0 0;">${esc(title && !/^\s*\[/.test(title) ? title : '무엇이든 물어보세요')}</div>`
       + `<div style="font-family:${SN()};font-size:12px;color:${P.muted};margin-top:4px;">${esc([data.eyebrow, when, count ? '질문 ' + count + '장' : ''].filter(Boolean).join(' · '))}</div></div>`;
     h += `<div style="height:1px;background:${P.line};margin:18px 0 22px;"></div>` + coverH(data, P, o.style);
     let idx = 0;
@@ -3112,7 +3113,7 @@
       if (q.foot.length) h += `<div style="margin:4px 0 0;text-align:center;font-family:${SN()};font-size:12px;line-height:1.7;color:${P.muted};">` + q.foot.map(g => `<div>${g.raw ? `<span style="color:${P.accent};">${esc(g.raw)}</span> ` : ''}${esc(g.v)}</div>`).join('') + `</div>`;
       h += altsH(x.t, P, o);
     });
-    if (o.bgm && ytId(data.yt)) h += ytCard(data, bgm, P, o.style);
+    if (o.bgm && ytId(data.yt)) h += ytCard(data, bgm || V.song, P, o.style);   // 무물은 버전마다 코너 음악이 정해져 있다
     else if (o.bgm && bgm) h += `<div style="margin-top:22px;text-align:center;font-family:${SN()};font-size:13px;color:${P.muted};"><span style="color:${P.accent};">수신 중인 곡</span>&nbsp; ${esc(bgm)}</div>`;
     h += galleryH(data, P, o.style) + tagsH(data, P, true);
     h += `<div style="margin-top:24px;text-align:center;font-family:${SN()};font-size:12px;color:${P.muted};">무엇이든 송신하세요. 답장은 ${vk === '재훈' ? '짧게' : vk === '희영' ? '하트 담아' : '둘이 번갈아'} 갑니다.</div>`;
