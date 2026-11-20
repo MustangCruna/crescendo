@@ -2214,7 +2214,7 @@
       "kicker": "S급 가계부 · 적자 불가",
       "destination": "쓴 만큼 늘어나는 저금통",
       "motto": "오늘도 흑자.",
-      "style": "",
+      "style": "ledger",
       "crew": [
         {
           "name": "서윤",
