@@ -419,7 +419,7 @@
   .seg{ display:inline-flex; flex-wrap:wrap; gap:4px; align-items:center; }
   .seg button{ border:1px solid transparent; background:transparent; color:var(--muted); border-radius:999px; padding:3px 11px; font-size:.82rem; }
   .seg button[aria-pressed="true"]{ border-color:var(--blossom); color:var(--text); background:rgba(244,184,201,.14); }
-  .pals{ display:inline-flex; gap:6px; align-items:center; }
+  .pals{ display:inline-flex; flex-wrap:wrap; max-width:100%; gap:6px; align-items:center; }
   .pals button{ width:22px; height:22px; border-radius:50%; border:2px solid transparent; padding:0; }
   .pals button[aria-pressed="true"]{ border-color:var(--text); }
   #rFormatted{ margin:0 -4px; }
@@ -3175,7 +3175,8 @@
   }
   function buildLedger(data, o){
     const { P, parsed, title, bgm, body, multi } = prep(data, o);
-    const when = data.when || '';   // 영수증 날짜가 기록 날짜로 잘못 잡히지 않게
+    const w0 = String(data.when || '');   // 영수증 · 항목 꼬리표가 기록 날짜로 잘못 잡히지 않게
+    const when = /[|]/.test(w0) || /^\s*\[?\s*(항목|영수증|가계부|지출)/.test(w0) ? '' : w0;
     const MO = FONTS.mono;
     let h = shell(o, P, body, `padding:28px 22px 24px;border:1px solid ${P.line};border-left:8px solid ${P.accent};border-radius:4px;`);
     const all = parsed.map(x => ({ x, L:ledgerParse(x.t.reply) }));
@@ -3222,7 +3223,7 @@
           + `<table style="width:100%;border-collapse:collapse;margin:0 0 22px;">` + L.items.map(it => {
             const k = whoKey(it.who), hand = k === 'hy', col = catColor(it.cat, P);
             const txt = hand ? `font-family:${HD()};font-size:20px;line-height:1.25;color:#b04a68;` : `font-family:${SR()};font-size:15px;line-height:1.5;color:${k === 'jh' ? '#2f4b74' : P.ink};`;
-            return `<tr><td style="width:46px;padding:7px 6px 7px 0;border:0;border-bottom:1px solid ${P.line};vertical-align:top;font-family:${MO};font-size:11px;line-height:1.9;color:${P.muted};white-space:nowrap;">${esc(it.date)}</td>`
+            return `<tr><td style="width:46px;padding:7px 6px 7px 0;border:0;border-bottom:1px solid ${P.line};vertical-align:top;font-family:${MO};font-size:11px;line-height:1.9;color:${P.muted};white-space:nowrap;">${esc(it.date.replace(/^\d{4}[-./]\s*/, '').replace(/[-.]/g, '/'))}</td>`
               + `<td style="padding:7px 6px 7px 0;border:0;border-bottom:1px solid ${P.line};vertical-align:top;">`
               + `<span style="display:inline-block;margin-right:6px;padding:0 6px;border:1px solid ${col};border-radius:3px;font-family:${SN()};font-size:11px;line-height:1.6;color:${col};vertical-align:1px;">${esc(it.cat)}</span><span style="${txt}">${esc(it.what)}</span>`
               + (it.memo ? `<div style="font-family:${SN()};font-size:12px;color:${P.muted};margin-top:2px;">${esc(it.memo)}</div>` : '') + `</td>`
